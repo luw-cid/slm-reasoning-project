@@ -1,0 +1,17 @@
+# Danh sách các thư viện cần thiết cho đồ án SLM Reasoning (Google Colab & Local)
+
+# Core Deep Learning & Transformer
+torch>=2.1.0
+transformers>=4.48.0
+accelerate>=0.26.0
+datasets>=2.16.0
+
+# RLVR & Parameter-Efficient Fine-Tuning (Dành cho Method B: GRPO + LoRA)
+trl>=0.12.0
+peft>=0.7.0
+bitsandbytes>=0.41.0
+
+# Tiện ích toán học và kiểm định
+numpy>=1.24.0
+scipy>=1.10.0
+tqdm>=4.66.0
