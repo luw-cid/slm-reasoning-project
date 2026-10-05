@@ -8,25 +8,36 @@ from typing import Any, Dict, List, Optional, Tuple
 
 def normalize_numeric_str(val: str) -> str:
     """Chuẩn hóa chuỗi số phục vụ việc so khớp chính xác hoặc xấp xỉ.
-    Loại bỏ dấu phẩy ngăn cách hàng nghìn, ký hiệu tiền tệ, khoảng trắng và chuẩn hóa số nguyên / số thực.
+    Loại bỏ dấu phẩy ngăn cách hàng nghìn, ký hiệu tiền tệ, khoảng trắng,
+    ký tự escape LaTeX (\\, \\!, \\%, \\text{}, ...) và chuẩn hóa số nguyên / số thực.
     """
     if val is None:
         return ""
     val = str(val).strip()
-    # Loại bỏ ký hiệu tiền tệ và dấu phẩy ngăn cách
-    val = re.sub(r"[\$,\s]", "", val)
-    # Loại bỏ dấu ngoặc đơn bao quanh hoặc dấu chấm ở cuối
-    val = re.sub(r"^\((.*?)\)$", r"\1", val)
-    val = val.rstrip(".")
 
-    # Ép kiểu sang float/int để chuẩn hóa định dạng (ví dụ: '18.0' -> '18')
-    try:
-        f_val = float(val)
-        if f_val.is_integer():
-            return str(int(f_val))
-        return str(f_val)
-    except ValueError:
-        return val
+    # Loại bỏ các lệnh text LaTeX thông dụng (ví dụ: \text{...}, \mathbf{...})
+    val = re.sub(r"\\(?:text|mathbf|mathrm|mbox)\{([^}]*)\}", r"\1", val)
+
+    # Loại bỏ ký hiệu tiền tệ, dấu phẩy, khoảng trắng, ký tự escape LaTeX (\, !, %, ~)
+    val = re.sub(r"[\$,\s\\!%~#]", "", val)
+
+    # Loại bỏ dấu ngoặc bao quanh và dấu chấm/hai chấm ở cuối
+    val = re.sub(r"^[\(\{\[]*(.*?)[\)\}\]]*$", r"\1", val)
+    val = val.rstrip(".:;")
+
+    # Trích xuất số thực hoặc nguyên nếu chuỗi vẫn còn dính chữ cái thừa
+    num_match = re.search(r"-?\d+(?:\.\d+)?", val)
+    if num_match:
+        extracted = num_match.group(0)
+        try:
+            f_val = float(extracted)
+            if f_val.is_integer():
+                return str(int(f_val))
+            return str(f_val)
+        except ValueError:
+            return extracted
+
+    return val
 
 
 def extract_answer_from_response(text: str) -> Optional[str]:

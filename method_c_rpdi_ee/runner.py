@@ -95,7 +95,7 @@ def generate_rpdi(
     max_new_tokens: int = 512,
     W: int = 8,
     lambda_th: float = 1.2,
-    min_steps: Optional[int] = None,
+    min_steps: Optional[int] = 64,
     do_sample: bool = False,
     temperature: float = 0.6,
     top_p: float = 0.95,

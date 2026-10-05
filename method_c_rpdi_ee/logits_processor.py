@@ -27,14 +27,14 @@ class RPDILogitsProcessor(LogitsProcessor):
         tokenizer,
         W: int = 8,
         lambda_th: float = 1.2,
-        min_steps: Optional[int] = None,
+        min_steps: Optional[int] = 64,
         boundary_symbols: Optional[Set[str]] = None,
     ):
         super().__init__()
         self.tokenizer = tokenizer
         self.W = W
         self.lambda_th = lambda_th
-        self.min_steps = min_steps if min_steps is not None else W
+        self.min_steps = min_steps if min_steps is not None else 64
 
         if boundary_symbols is None:
             boundary_symbols = {".", "\n", ";", "?", "!", ","}
