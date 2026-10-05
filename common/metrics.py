@@ -40,11 +40,34 @@ def normalize_numeric_str(val: str) -> str:
     return val
 
 
+def _extract_boxed_content(text: str) -> List[str]:
+    """Trích xuất nội dung bên trong các thẻ \\boxed{...}, hỗ trợ ngoặc lồng nhau."""
+    results = []
+    idx = 0
+    while True:
+        pos = text.find(r"\boxed{", idx)
+        if pos == -1:
+            break
+        start = pos + len(r"\boxed{")
+        depth = 1
+        i = start
+        while i < len(text) and depth > 0:
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+            i += 1
+        if depth == 0:
+            results.append(text[start : i - 1])
+        idx = pos + len(r"\boxed{")
+    return results
+
+
 def extract_answer_from_response(text: str) -> Optional[str]:
     """Trích xuất đáp án số cuối cùng từ câu trả lời của mô hình ngôn ngữ lớn.
 
     Chiến lược ưu tiên:
-    1. Tìm trong thẻ \\boxed{...} (định dạng toán học LaTeX chuẩn của DeepSeek-R1)
+    1. Tìm trong thẻ \\boxed{...} (hỗ trợ ngoặc nhọn lồng nhau như \\boxed{180 \\text{ minutes}})
     2. Tìm theo mẫu '#### <số>' (định dạng chuẩn của tập dữ liệu GSM8K)
     3. Tìm theo các cụm từ tường minh như 'the answer is <số>', 'total is <số>'
     4. Dự phòng: Trích xuất giá trị số xuất hiện cuối cùng trong phần trả lời
@@ -59,29 +82,34 @@ def extract_answer_from_response(text: str) -> Optional[str]:
         content_to_search = text
 
     # 1. Thẻ LaTeX \boxed{...}
-    boxed_matches = re.findall(r"\\boxed\{([^{}]+)\}", content_to_search)
-    if boxed_matches:
-        candidate = boxed_matches[-1].strip()
-        # candidate có thể là '$18' hoặc '18'
-        norm = normalize_numeric_str(candidate)
-        if norm:
-            return norm
+    boxed_candidates = _extract_boxed_content(content_to_search)
+    if boxed_candidates:
+        for cand in reversed(boxed_candidates):
+            norm = normalize_numeric_str(cand)
+            if norm:
+                return norm
 
     # 2. Định dạng chuẩn GSM8K '#### <số>'
-    hash_matches = re.findall(r"####\s*(-?[\d\.,]+)", content_to_search)
+    hash_matches = re.findall(r"####\s*(-?\d+(?:[\.,]\d+)*)", content_to_search)
     if hash_matches:
-        return normalize_numeric_str(hash_matches[-1])
+        for match in reversed(hash_matches):
+            norm = normalize_numeric_str(match)
+            if norm:
+                return norm
 
-    # 3. Các mẫu câu kết luận đáp án tường minh
+    # 3. Các mẫu câu kết luận đáp án tường minh (yêu cầu phải có chữ số)
     statement_patterns = [
-        r"(?:the|final)?\s*answer\s*(?:is|equals|:|=)\s*[:\$]?\s*(-?[\d\.,]+)",
-        r"(?:total|result)\s*(?:is|equals|:|=)\s*[:\$]?\s*(-?[\d\.,]+)",
-        r"(?:therefore|thus|hence),?\s*(?:the\s+answer\s+is\s+)?[:\$]?\s*(-?[\d\.,]+)",
+        r"(?:the|final)?\s*answer\s*(?:is|equals|:|=)\s*[:\$]?\s*(-?\d+(?:[\.,]\d+)*)",
+        r"(?:total|result)\s*(?:is|equals|:|=)\s*[:\$]?\s*(-?\d+(?:[\.,]\d+)*)",
+        r"(?:therefore|thus|hence)\s*,?\s*(?:the\s+answer\s+is\s+|the\s+total\s+is\s+|it\s+is\s+)?[:\$]?\s*(-?\d+(?:[\.,]\d+)*)",
     ]
     for pattern in statement_patterns:
         matches = re.findall(pattern, content_to_search, re.IGNORECASE)
         if matches:
-            return normalize_numeric_str(matches[-1])
+            for match in reversed(matches):
+                norm = normalize_numeric_str(match)
+                if norm:
+                    return norm
 
     # 4. Dự phòng: Tìm tất cả các số (nguyên hoặc thập phân) và lấy số cuối cùng
     all_numbers = re.findall(r"-?\d+(?:\.\d+)?", content_to_search.replace(",", ""))
