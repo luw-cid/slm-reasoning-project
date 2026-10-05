@@ -75,8 +75,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max_new_tokens",
         type=int,
-        default=512,
-        help="Số lượng token sinh mới tối đa cho mỗi câu hỏi (mặc định: 512).",
+        default=768,
+        help="Số lượng token sinh mới tối đa cho mỗi câu hỏi (mặc định: 768).",
     )
     parser.add_argument(
         "--do_sample",
