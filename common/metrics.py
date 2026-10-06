@@ -75,9 +75,9 @@ def extract_answer_from_response(text: str) -> Optional[str]:
     if not text:
         return None
 
-    # Chỉ tìm kiếm sau thẻ </think> nếu có, tránh trích nhầm các con số trung gian trong quá trình nháp
+    # Chỉ tìm kiếm sau thẻ </think> đầu tiên nếu có, tránh trích nhầm các con số trung gian trong quá trình nháp
     if "</think>" in text:
-        content_to_search = text.split("</think>")[-1]
+        content_to_search = text.split("</think>", 1)[1]
     else:
         content_to_search = text
 
