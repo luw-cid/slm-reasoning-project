@@ -43,7 +43,7 @@ class TraceRecorderLogitsProcessor(LogitsProcessor):
         self.entropies: List[float] = []
 
     def reset(self) -> None:
-        self.entropies.clear()
+        self.entropies = []
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         # scores[0] là logits dự đoán token tiếp theo
@@ -201,7 +201,11 @@ def main():
             correct_count += 1
 
         total_tokens_accum += total_gen_len
-        total_think_tokens_accum += think_tokens
+        sample_entropies = list(recorder.entropies)
+        assert len(sample_entropies) == total_gen_len, (
+            f"Lỗi không khớp độ dài: len(entropies)={len(sample_entropies)} "
+            f"!= len(generated_token_ids)={total_gen_len} tại mẫu ID {sample_id}!"
+        )
 
         # Lưu vết cho câu hỏi hiện tại
         record = {
@@ -210,7 +214,7 @@ def main():
             "ground_truth": ground_truth,
             "prompt_token_ids": prompt_token_ids,
             "generated_token_ids": generated_token_ids,
-            "entropies": recorder.entropies,
+            "entropies": sample_entropies,
             "natural_think_end_idx": natural_think_end_idx,
             "standard_metrics": {
                 "predicted_answer": pred_answer,

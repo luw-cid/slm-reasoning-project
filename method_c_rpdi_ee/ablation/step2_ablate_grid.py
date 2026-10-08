@@ -168,6 +168,16 @@ def main():
     max_new_tokens = traces_data["metadata"]["max_new_tokens"]
     num_samples = len(traces_list)
 
+    # Kiểm tra tính toàn vẹn của dữ liệu vết (Sanity check)
+    for sample in traces_list:
+        ent_len = len(sample.get("entropies", []))
+        tok_len = len(sample.get("generated_token_ids", []))
+        assert ent_len == tok_len, (
+            f"Lỗi toàn vẹn dữ liệu ở mẫu ID {sample.get('sample_id')}: "
+            f"len(entropies)={ent_len} != len(generated_token_ids)={tok_len}! "
+            f"Vui lòng chạy lại 'step1_trace_baseline.py' để ghi lại vết hợp lệ."
+        )
+
     print(f"[*] Đã tải {num_samples} vết suy luận từ '{args.traces_file}'.")
     print(f"[*] Cấu hình lưới tham số:")
     print(f"    - W ∈ {args.W_list}")
