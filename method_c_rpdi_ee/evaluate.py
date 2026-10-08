@@ -69,8 +69,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--min_steps",
         type=int,
-        default=64,
-        help="Số token suy nghĩ tối thiểu trước khi cho phép kích hoạt phanh dừng sớm (mặc định: 64).",
+        default=None,
+        help="Số token suy nghĩ tối thiểu trước khi cho phép kích hoạt phanh dừng sớm (mặc định: None -> dùng chính W như bài báo).",
     )
     parser.add_argument(
         "--max_new_tokens",

@@ -95,7 +95,7 @@ def generate_rpdi(
     max_new_tokens: int = 768,
     W: int = 8,
     lambda_th: float = 1.2,
-    min_steps: Optional[int] = 64,
+    min_steps: Optional[int] = None,
     do_sample: bool = False,
     temperature: float = 0.6,
     top_p: float = 0.95,
@@ -110,7 +110,7 @@ def generate_rpdi(
         max_new_tokens: Giới hạn tổng số token được sinh mới.
         W: Kích thước cửa sổ trượt tính entropy cục bộ.
         lambda_th: Ngưỡng phát hiện lệch hướng suy luận.
-        min_steps: Số bước suy nghĩ tối thiểu trước khi phanh có hiệu lực.
+        min_steps: Số bước suy nghĩ tối thiểu trước khi phanh có hiệu lực (mặc định None -> bằng W theo bài báo).
         do_sample: False cho giải mã Greedy, True cho sampling ngẫu nhiên.
         temperature: Nhiệt độ sampling.
         top_p: Xác suất tích lũy Top-p.

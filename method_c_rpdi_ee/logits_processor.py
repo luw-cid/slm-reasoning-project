@@ -27,14 +27,14 @@ class RPDILogitsProcessor(LogitsProcessor):
         tokenizer,
         W: int = 8,
         lambda_th: float = 1.2,
-        min_steps: Optional[int] = 64,
+        min_steps: Optional[int] = None,
         boundary_symbols: Optional[Set[str]] = None,
     ):
         super().__init__()
         self.tokenizer = tokenizer
         self.W = W
         self.lambda_th = lambda_th
-        self.min_steps = min_steps if min_steps is not None else 64
+        self.min_steps = min_steps if min_steps is not None else W
 
         if boundary_symbols is None:
             boundary_symbols = {".", "\n", ";", "?", "!", ","}
@@ -126,7 +126,7 @@ class RPDILogitsProcessor(LogitsProcessor):
         is_boundary_gpu = torch.any(self.boundary_tensor == last_token)
 
         if is_boundary_gpu.item():
-            if self.step_count >= self.min_steps:
+            if self.step_count >= self.min_steps and self.step_count >= self.W:
                 GTF = self.S_global / self.step_count
                 LTF = self.S_local / self.W
                 RPDI = LTF / GTF if GTF > 0 else 0.0

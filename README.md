@@ -147,17 +147,23 @@ python method_c_rpdi_ee/evaluate.py \
     --lambda_th 2.0 \
     --output_file results/method_c_greedy_paper_W512.json
 ```
+### 4.3. Chạy Ablation Study quét lưới (W × λ) & Dựng đường biên Pareto
+Để chọn siêu tham số tối ưu dựa trên số liệu thực nghiệm thay vì cảm tính:
 
-**Bảng tham số CLI trong `method_c_rpdi_ee/evaluate.py`**:
-| Tham số | Mặc định | Ý nghĩa |
-| :--- | :---: | :--- |
-| `--limit` | `None` (full) | Giới hạn số câu hỏi chạy thử nghiệm |
-| `--W` | `8` | Kích thước cửa sổ trượt tính entropy cục bộ |
-| `--lambda_th` | `1.2` | Ngưỡng chỉ số RPDI kích hoạt phanh |
-| `--min_steps` | `64` | Số token suy nghĩ tối thiểu trước khi cho phép phanh (chống phanh non) |
-| `--max_new_tokens` | `768` | Ngân sách token sinh tối đa (đảm bảo đủ không gian viết đáp án) |
-| `--do_sample` | `False` | `False`: Greedy decoding (tất định); thêm cờ này nếu muốn Sampling |
-| `--output_file` | `results/...` | Đường dẫn lưu kết quả JSON |
+```bash
+# Chạy toàn bộ pipeline 3 bước (test nhanh 10 mẫu hoặc bỏ --limit để chạy full)
+python method_c_rpdi_ee/ablation/run_ablation_pipeline.py --limit 10
+
+# Hoặc chạy từng bước độc lập:
+# Bước 1: Ghi vết Baseline (Greedy + Entropy)
+python method_c_rpdi_ee/ablation/step1_trace_baseline.py --limit 10
+
+# Bước 2: Mô phỏng CPU offline 16 cấu hình (W x lambda) + Sinh tiếp phần trả lời trên GPU
+python method_c_rpdi_ee/ablation/step2_ablate_grid.py
+
+# Bước 3: Phân tích đường biên Pareto và xuất đồ thị PNG/PDF
+python method_c_rpdi_ee/ablation/step3_plot_pareto.py
+```
 
 ---
 
@@ -169,9 +175,10 @@ Qua thực nghiệm kiểm chứng đối chứng ban đầu trên mô hình `De
    - Ở chế độ Standard, có tới **45% số câu hỏi** mô hình sinh phần `<think>` kéo dài đến tận kịch trần 511/512 tokens mà **không kịp đóng thẻ `</think>`**.
    - Do dùng chung ngân sách `max_new_tokens=512`, mô hình cạn kiệt token trước khi kịp viết câu trả lời cuối cùng, dẫn đến câu trả lời bị cắt cụt và bị tính là sai.
    - **RPDI-EE đã giải quyết triệt để lỗi này**: Khi phát hiện lệch hướng, phanh ép đóng thẻ sớm, chừa lại hơn 400 token cho pha trả lời để kết luận chính xác.
-2. **Trade-off và Sự cần thiết của `min_steps` (Chống phanh non - Premature Exit)**:
-   - Nếu để $W=8, \lambda=1.2$ không giới hạn bước tối thiểu, phanh có xu hướng kích hoạt quá sớm (ngay ở bước 11–14 token), khiến mô hình chưa kịp hiểu đề bài đã bị ép trả lời.
-   - Việc thiết lập **`min_steps = 64`** tạo ra một "vùng đệm an toàn" (warm-up zone) giúp mô hình suy nghĩ chín muồi các bước đầu trước khi hệ thống giám sát can thiệp.
+2. **Hiệu ứng biên của `min_steps=64` và Chuyển dịch sang Quét Lưới Hệ thống (Ablation Study)**:
+   - Trong cấu hình thử nghiệm ban đầu ($W=8, \lambda=1.2$), do cửa sổ quá hẹp và ngưỡng quá nhạy, cấm thoát trước 64 bước (`min_steps=64`) được đưa vào nhằm chống phanh non.
+   - Tuy nhiên, phân tích dữ liệu cho thấy `min(exit_step) = 64` và có tới 17 câu thoát ngay trong khoảng 64–70 bước. Điều này chứng minh nhiều câu đã thỏa điều kiện dừng từ trước và bị dồn lại thoát ngay khi `min_steps` vừa hết.
+   - **Giải pháp khoa học chuẩn xác**: Bỏ rào cản nhân tạo `min_steps` (mặc định cho phép giám sát ngay khi $i \ge W$ theo bài báo), mở rộng không gian tìm kiếm sang $W \in \{16, 32, 64, 128\} \times \lambda \in \{1.5, 2.0, 2.5, 3.0\}$, sau đó dựng đường biên **Pareto Frontier (Accuracy vs. Average Tokens)** để chọn điểm cân bằng tối ưu ("Sweet Spot") dựa trên số liệu khách quan.
 
 ---
 
