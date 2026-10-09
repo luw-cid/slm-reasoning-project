@@ -25,8 +25,8 @@ class RPDILogitsProcessor(LogitsProcessor):
     def __init__(
         self,
         tokenizer,
-        W: int = 8,
-        lambda_th: float = 1.2,
+        W: int = 16,
+        lambda_th: float = 1.5,
         min_steps: Optional[int] = None,
         boundary_symbols: Optional[Set[str]] = None,
     ):

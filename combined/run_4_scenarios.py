@@ -63,20 +63,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--W",
         type=int,
-        default=8,
-        help="Cửa sổ trượt W của RPDI-EE (mặc định: 8).",
+        default=16,
+        help="Cửa sổ trượt W của RPDI-EE (mặc định: 16 tối ưu theo Pareto Ablation Study).",
     )
     parser.add_argument(
         "--lambda_th",
         type=float,
-        default=1.2,
-        help="Ngưỡng kích hoạt phanh lambda của RPDI-EE (mặc định: 1.2).",
+        default=1.5,
+        help="Ngưỡng kích hoạt phanh lambda của RPDI-EE (mặc định: 1.5 tối ưu theo Pareto Ablation Study).",
     )
     parser.add_argument(
         "--min_steps",
         type=int,
-        default=64,
-        help="Số bước suy nghĩ tối thiểu trước khi phanh (mặc định: 64).",
+        default=None,
+        help="Số bước suy nghĩ tối thiểu trước khi phanh (mặc định: None -> dùng chính W).",
     )
     parser.add_argument(
         "--max_new_tokens",

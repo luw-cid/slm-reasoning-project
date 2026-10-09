@@ -57,14 +57,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--W",
         type=int,
-        default=8,
-        help="Kích thước cửa sổ trượt W tính entropy cục bộ (mặc định: 8; tham số bài báo arXiv:2603.14251 là 512).",
+        default=16,
+        help="Kích thước cửa sổ trượt W tính entropy cục bộ (mặc định: 16 tối ưu theo Pareto Ablation Study).",
     )
     parser.add_argument(
         "--lambda_th",
         type=float,
-        default=1.2,
-        help="Ngưỡng kích hoạt dừng sớm lambda (mặc định: 1.2; tham số bài báo arXiv:2603.14251 là 2.0).",
+        default=1.5,
+        help="Ngưỡng kích hoạt dừng sớm lambda (mặc định: 1.5 tối ưu theo Pareto Ablation Study).",
     )
     parser.add_argument(
         "--min_steps",

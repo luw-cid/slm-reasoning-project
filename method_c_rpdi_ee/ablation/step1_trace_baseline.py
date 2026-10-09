@@ -201,6 +201,7 @@ def main():
             correct_count += 1
 
         total_tokens_accum += total_gen_len
+        total_think_tokens_accum += think_tokens
         sample_entropies = list(recorder.entropies)
         assert len(sample_entropies) == total_gen_len, (
             f"Lỗi không khớp độ dài: len(entropies)={len(sample_entropies)} "
