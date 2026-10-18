@@ -9,6 +9,22 @@ import torch.nn.functional as F
 from transformers import LogitsProcessor
 
 
+DEFAULT_BOUNDARY_SYMBOLS = {".", "\n", ";", "?", "!", ","}
+
+
+def build_boundary_ids(tokenizer, boundary_symbols: Optional[Set[str]] = None) -> Set[int]:
+    """Tập ID token biên câu (kể cả biến thể có khoảng trắng đứng trước)."""
+    if boundary_symbols is None:
+        boundary_symbols = DEFAULT_BOUNDARY_SYMBOLS
+    boundary_ids = set()
+    for sym in boundary_symbols:
+        boundary_ids.update(tokenizer.encode(sym, add_special_tokens=False))
+        ids_space = tokenizer.encode(" " + sym, add_special_tokens=False)
+        if ids_space:
+            boundary_ids.add(ids_space[-1])
+    return boundary_ids
+
+
 class RPDILogitsProcessor(LogitsProcessor):
     """LogitsProcessor giám sát entropy cục bộ/toàn cục trong quá trình sinh thẻ <think>.
 
@@ -36,23 +52,17 @@ class RPDILogitsProcessor(LogitsProcessor):
         self.lambda_th = lambda_th
         self.min_steps = min_steps if min_steps is not None else W
 
-        if boundary_symbols is None:
-            boundary_symbols = {".", "\n", ";", "?", "!", ","}
-
         # 1. Tiền xử lý ID của các token biên câu trên GPU để so khớp vector song song O(1)
-        boundary_ids = set()
-        for sym in boundary_symbols:
-            ids = tokenizer.encode(sym, add_special_tokens=False)
-            boundary_ids.update(ids)
-            ids_space = tokenizer.encode(" " + sym, add_special_tokens=False)
-            if ids_space:
-                boundary_ids.add(ids_space[-1])
-
-        self.boundary_tensor = torch.tensor(list(boundary_ids), dtype=torch.long)
+        self.boundary_tensor = torch.tensor(
+            sorted(build_boundary_ids(tokenizer, boundary_symbols)), dtype=torch.long
+        )
 
         # 2. Token IDs cho chuỗi đóng thẻ: "</think>\n"
         self.close_tokens: List[int] = tokenizer.encode("</think>\n", add_special_tokens=False)
         self.close_len = len(self.close_tokens)
+        # ID của thẻ '</think>' (token đơn trong tokenizer DeepSeek-R1-Distill) để nhận biết mô hình tự đóng thẻ
+        think_close_ids = tokenizer.encode("</think>", add_special_tokens=False)
+        self.close_think_id: Optional[int] = think_close_ids[0] if len(think_close_ids) == 1 else None
 
         # Theo dõi trạng thái
         self.force_exit_step = -1
@@ -102,6 +112,11 @@ class RPDILogitsProcessor(LogitsProcessor):
                 self.closed_think = True
                 return scores
 
+        # Nếu mô hình đã tự đóng </think>, dừng giám sát để không phanh nhầm trong pha trả lời
+        if self.close_think_id is not None and input_ids[0, -1].item() == self.close_think_id:
+            self.closed_think = True
+            return scores
+
         # 2. Tính toán entropy token: H(t_i) = - sum(p * log p)
         # Sử dụng scores của phần tử đầu tiên trong batch
         logits = scores[0]
@@ -143,5 +158,68 @@ class RPDILogitsProcessor(LogitsProcessor):
                     next_scores[:, target_token_id] = 0.0
                     self.forced_token_idx = 1
                     return next_scores
+
+        return scores
+
+
+class ScheduledExitLogitsProcessor(LogitsProcessor):
+    """Baseline đối chứng: ép đóng </think> tại một bước định trước, KHÔNG dùng tín hiệu entropy.
+
+    - align_to_boundary=False: cắt cứng đúng tại bước exit_at (Fixed Hard Truncation).
+    - align_to_boundary=True: phanh tại token biên câu đầu tiên kể từ bước exit_at
+      (dùng cho baseline phanh ngẫu nhiên, cùng cơ chế chèn thẻ như RPDI-EE).
+    Nếu mô hình tự đóng </think> trước đó thì không can thiệp.
+    """
+
+    def __init__(
+        self,
+        tokenizer,
+        exit_at: int,
+        align_to_boundary: bool = False,
+        boundary_symbols: Optional[Set[str]] = None,
+    ):
+        super().__init__()
+        self.exit_at = exit_at
+        self.align_to_boundary = align_to_boundary
+        self.boundary_ids = build_boundary_ids(tokenizer, boundary_symbols)
+        self.close_tokens: List[int] = tokenizer.encode("</think>\n", add_special_tokens=False)
+        think_close_ids = tokenizer.encode("</think>", add_special_tokens=False)
+        self.close_think_id: Optional[int] = think_close_ids[0] if len(think_close_ids) == 1 else None
+
+        self.step_count = 0
+        self.forced_token_idx = -1
+        self.closed_think = False
+        self.early_exited = False
+        self.force_exit_step = -1
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+        if self.closed_think:
+            return scores
+
+        # Đang ép sinh chuỗi '</think>\n'
+        if self.forced_token_idx >= 0:
+            if self.forced_token_idx < len(self.close_tokens):
+                next_scores = torch.full_like(scores, float("-inf"))
+                next_scores[:, self.close_tokens[self.forced_token_idx]] = 0.0
+                self.forced_token_idx += 1
+                return next_scores
+            self.closed_think = True
+            return scores
+
+        last_token = input_ids[0, -1].item()
+        if self.close_think_id is not None and last_token == self.close_think_id:
+            self.closed_think = True
+            return scores
+
+        self.step_count += 1
+        if self.step_count >= self.exit_at and (
+            not self.align_to_boundary or last_token in self.boundary_ids
+        ):
+            self.early_exited = True
+            self.force_exit_step = self.step_count
+            next_scores = torch.full_like(scores, float("-inf"))
+            next_scores[:, self.close_tokens[0]] = 0.0
+            self.forced_token_idx = 1
+            return next_scores
 
         return scores

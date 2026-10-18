@@ -164,6 +164,27 @@ python method_c_rpdi_ee/ablation/step2_ablate_grid.py
 python method_c_rpdi_ee/ablation/step3_plot_pareto.py
 ```
 
+### 4.4. Thực nghiệm đối chứng trên tập held-out & phân tích thống kê
+
+```bash
+# Tập validation 200 câu từ GSM8K train để chọn W, lambda (không chạm tập test)
+python common/make_val_split.py
+python method_c_rpdi_ee/ablation/step1_trace_baseline.py --data_file common/data/gsm8k_val_200.json     --output_file results/val_baseline_traces.json
+python method_c_rpdi_ee/ablation/step2_ablate_grid.py --traces_file results/val_baseline_traces.json     --W_list 4 8 16 32 --lambda_list 1.1 1.25 1.5 2.0 --output_file results/val_ablation_grid_results.json
+
+# Cắt cứng 130 token + phanh ngẫu nhiên trên câu 100-704 (có thể dừng/chạy tiếp)
+python method_c_rpdi_ee/run_controls.py --methods hardtrunc:130,random --output_file results/controls_768.jsonl
+
+# Khảo sát theo ngân sách token (tập con 200 câu)
+python method_c_rpdi_ee/run_controls.py --max_new_tokens 2048 --end 300     --methods standard,rpdi:16:1.5,rpdi:512:2.0 --output_file results/budget_2048.jsonl
+
+# Chẩn đoán chênh lệch mô phỏng offline và chạy thật (100 câu đầu)
+python method_c_rpdi_ee/ablation/diagnose_sim_vs_online.py
+
+# Phân tích thống kê (không cần GPU)
+python method_c_rpdi_ee/analyze_results.py --controls results/controls_768.jsonl
+```
+
 ---
 
 ## 📊 5. Phát Hiện Thực Nghiệm Đáng Chú Ý (Key Findings)
@@ -178,10 +199,14 @@ Qua thực nghiệm kiểm chứng đối chứng ban đầu trên mô hình `De
    - Trong cấu hình thử nghiệm ban đầu ($W=8, \lambda=1.2$), do cửa sổ quá hẹp và ngưỡng quá nhạy, cấm thoát trước 64 bước (`min_steps=64`) được đưa vào nhằm chống phanh non.
    - Tuy nhiên, phân tích dữ liệu cho thấy `min(exit_step) = 64` và có tới 17 câu thoát ngay trong khoảng 64–70 bước. Điều này chứng minh nhiều câu đã thỏa điều kiện dừng từ trước và bị dồn lại thoát ngay khi `min_steps` vừa hết.
    - **Giải pháp khoa học chuẩn xác**: Bỏ rào cản nhân tạo `min_steps` (mặc định cho phép giám sát ngay khi $i \ge W$ theo bài báo), mở rộng không gian tìm kiếm sang $W \in \{16, 32, 64, 128\} \times \lambda \in \{1.5, 2.0, 2.5, 3.0\}$, sau đó dựng đường biên **Pareto Frontier (Accuracy vs. Average Tokens)** để chọn điểm cân bằng tối ưu ("Sweet Spot") dựa trên số liệu khách quan.
-3. **Thống trị Tuyệt đối của `RPDI(W=16, λ=1.5)` trên toàn bộ 100 câu GSM8K**:
-   - **Đỉnh cao Accuracy**: Đạt **78.00%** (vượt trội so với Standard Baseline **59.00%** tới **+19.00%**).
-   - **Tiết kiệm Token vượt bậc**: Giảm **73.6% token suy nghĩ** (từ 461.3 xuống 121.9 think tokens), giảm tổng chi phí suy luận 15.8% (từ 615.2 xuống 518.1 tokens).
-   - **Đánh bại Baseline Cắt cứng**: Vượt qua tất cả các mức Fixed Hard Truncation ($N=32..256$), khẳng định giá trị phanh nhận thức thích ứng theo entropy.
+3. **`RPDI(W=16, λ=1.5)` tốt nhất trong lưới đã quét (100 câu, mô phỏng offline)**:
+   - Accuracy mô phỏng **78.00%** so với Standard **59.00%**; giảm **73.6% token suy nghĩ**.
+   - So với cắt cứng: `HardTrunc(N=128)` đạt 75%. Chênh lệch 3 câu trên 100 câu chưa có ý nghĩa thống kê.
+   - Chạy thật trên chính 100 câu này đạt 73% (đang chẩn đoán bằng `ablation/diagnose_sim_vs_online.py`).
+4. **Kết quả trên 605 câu held-out (câu 100–704, không dùng để chọn tham số)**:
+   - Accuracy **52.23% → 71.57%** (+19.34 điểm, KTC 95% [+15.5, +23.2], McNemar p ≈ 2.4e-21).
+   - Toàn bộ mức tăng đến từ các câu baseline bị cạn 768 token (21.18% → 63.19%); với các câu baseline tự kết thúc thì không cải thiện (80.44% → 79.18%).
+   - Chi tiết: `report/phan_tich_heldout.md` (sinh bằng `method_c_rpdi_ee/analyze_results.py`).
 
 ---
 
