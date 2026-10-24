@@ -164,6 +164,36 @@ def parse_args() -> argparse.Namespace:
         help="Bật thêm hàm phần thưởng khuyến khích suy nghĩ súc tích (mặc định: False - chuẩn DeepSeek-R1).",
     )
 
+    # Probe entropy/RPDI định kỳ (Gap 1: RLVR thay đổi tín hiệu phanh entropy thế nào)
+    parser.add_argument(
+        "--probe_every",
+        type=int,
+        default=25,
+        help="Chạy probe RPDI sau mỗi N bước huấn luyện (0 = chỉ probe đầu và cuối; -1 = tắt hẳn).",
+    )
+    parser.add_argument(
+        "--probe_size",
+        type=int,
+        default=16,
+        help="Số câu probe lấy từ đầu common/data/gsm8k_val_200.json (mặc định: 16).",
+    )
+    parser.add_argument(
+        "--probe_batch_size",
+        type=int,
+        default=8,
+        help="Kích thước batch khi sinh Greedy cho probe (giảm nếu thiếu VRAM).",
+    )
+    parser.add_argument(
+        "--probe_max_new_tokens",
+        type=int,
+        default=768,
+        help="Ngân sách token của probe, khớp thiết lập đánh giá (mặc định: 768).",
+    )
+    parser.add_argument("--rpdi_W", type=int, default=16, help="Cửa sổ W khi mô phỏng RPDI-EE trong probe.")
+    parser.add_argument(
+        "--rpdi_lambda", type=float, default=1.5, help="Ngưỡng lambda khi mô phỏng RPDI-EE trong probe."
+    )
+
     return parser.parse_args()
 
 
@@ -295,6 +325,29 @@ def train_grpo():
         peft_config=peft_config,
     )
 
+    # 7b. Ghi log metric và probe entropy/RPDI định kỳ
+    from method_b_rlvr.entropy_logging import JSONLLogCallback, RPDIProbeCallback
+
+    train_log_path = os.path.join(args.output_dir, "train_log.jsonl")
+    trainer.add_callback(JSONLLogCallback(train_log_path))
+    if args.probe_every >= 0:
+        trainer.add_callback(
+            RPDIProbeCallback(
+                tokenizer=tokenizer,
+                output_dir=args.output_dir,
+                probe_every=args.probe_every,
+                probe_size=args.probe_size,
+                max_new_tokens=args.probe_max_new_tokens,
+                W=args.rpdi_W,
+                lambda_th=args.rpdi_lambda,
+                batch_size=args.probe_batch_size,
+            )
+        )
+        print(
+            f"[Probe] Probe RPDI trên {args.probe_size} câu val, mỗi {args.probe_every} bước "
+            f"(W={args.rpdi_W}, lambda={args.rpdi_lambda}, {args.probe_max_new_tokens} token)."
+        )
+
     # 8. Bắt đầu tiến trình huấn luyện
     print("\n🚀 [Trainer] BẮT ĐẦU QUÁ TRÌNH HUẤN LUYỆN GRPO...")
     trainer.train()
@@ -305,8 +358,11 @@ def train_grpo():
     tokenizer.save_pretrained(args.adapter_dir)
 
     # Ghi lại tệp thông số cấu hình huấn luyện phục vụ viết báo cáo luận văn
+    import trl
+
     training_info = {
         "base_model": args.model_id,
+        "trl_version": trl.__version__,
         "algorithm": "GRPO (Group Relative Policy Optimization) with LoRA",
         "num_samples": len(train_dataset),
         "learning_rate": args.learning_rate,
@@ -314,7 +370,20 @@ def train_grpo():
         "lora_r": args.lora_r,
         "lora_alpha": args.lora_alpha,
         "use_4bit": args.use_4bit,
+        "max_completion_length": args.max_completion_length,
+        "temperature": args.temperature,
+        "include_brevity_reward": args.include_brevity_reward,
+        "global_steps": trainer.state.global_step,
         "adapter_path": args.adapter_dir,
+        "train_log": train_log_path,
+        "probe": {
+            "probe_every": args.probe_every,
+            "probe_size": args.probe_size,
+            "max_new_tokens": args.probe_max_new_tokens,
+            "W": args.rpdi_W,
+            "lambda": args.rpdi_lambda,
+            "summary_file": os.path.join(args.output_dir, "rpdi_probe.jsonl"),
+        },
     }
     with open(os.path.join(args.adapter_dir, "training_info.json"), "w", encoding="utf-8") as f:
         json.dump(training_info, f, ensure_ascii=False, indent=2)
