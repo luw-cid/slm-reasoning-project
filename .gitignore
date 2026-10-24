@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project: submission archives and regenerable data
+*.zip
+common/data/gsm8k_train_full.json
