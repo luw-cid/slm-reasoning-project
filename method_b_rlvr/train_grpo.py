@@ -340,6 +340,17 @@ def train_grpo():
         peft_config=peft_config,
     )
 
+    # TRL luôn ép adapter QLoRA sang bf16; khi huấn luyện fp16 (T4), GradScaler không unscale được gradient bf16.
+    # Đưa tham số huấn luyện về fp32 (master weights chuẩn của AMP fp16). Optimizer chỉ được tạo trong train().
+    if use_fp16:
+        n_cast = 0
+        for param in trainer.model.parameters():
+            if param.requires_grad and param.dtype != torch.float32:
+                param.data = param.data.float()
+                n_cast += 1
+        if n_cast:
+            print(f"[Trainer] Đã chuyển {n_cast} tham số huấn luyện (LoRA) sang fp32 để tương thích AMP fp16.")
+
     # 7b. Ghi log metric và probe entropy/RPDI định kỳ
     from method_b_rlvr.entropy_logging import JSONLLogCallback, RPDIProbeCallback
 
