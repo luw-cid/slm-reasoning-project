@@ -58,7 +58,10 @@ def accuracy_reward_func(
     """Hàm phần thưởng độ chính xác (Accuracy Reward / Verifiable Reward).
     
     Quy tắc:
-    - Trích xuất đáp số cuối cùng từ đoạn sinh (ưu tiên sau thẻ </think>).
+    - Bắt buộc có thẻ đóng </think>: lời giải bị cắt giữa pha suy nghĩ nhận 0 điểm (như ThinkPrune),
+      nếu không extract_answer_from_response sẽ lấy số cuối cùng trong phần nháp và vẫn có thể được thưởng,
+      khiến mô hình không bị phạt khi suy nghĩ vượt ngân sách.
+    - Trích xuất đáp số cuối cùng từ phần trả lời sau </think>.
     - So khớp với đáp án chuẩn.
     - Thưởng +2.0 điểm nếu ĐÚNG hoàn toàn; 0.0 điểm nếu SAI hoặc không trích xuất được.
     """
@@ -69,6 +72,10 @@ def accuracy_reward_func(
     for comp, gt in zip(completions, aligned_gts):
         text = _extract_completion_text(comp)
         gt_str = str(gt).strip() if gt is not None else ""
+
+        if "</think>" not in text:
+            rewards.append(0.0)
+            continue
 
         # Trích xuất đáp án từ câu trả lời
         pred_ans = extract_answer_from_response(text)
