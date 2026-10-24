@@ -293,7 +293,7 @@ def train_grpo():
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(args.adapter_dir, exist_ok=True)
 
-    grpo_args = GRPOConfig(
+    grpo_kwargs = dict(
         output_dir=args.output_dir,
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
@@ -313,6 +313,14 @@ def train_grpo():
         warmup_ratio=0.1,
         remove_unused_columns=False,
     )
+    # Các phiên bản TRL đổi/bỏ tham số giữa chừng (vd. max_prompt_length): chỉ truyền tham số được hỗ trợ
+    import dataclasses
+
+    supported = {f.name for f in dataclasses.fields(GRPOConfig)}
+    dropped = sorted(k for k in grpo_kwargs if k not in supported)
+    if dropped:
+        print(f"[Cảnh báo] GRPOConfig của TRL hiện tại không hỗ trợ, bỏ qua: {dropped}")
+    grpo_args = GRPOConfig(**{k: v for k, v in grpo_kwargs.items() if k in supported})
 
     # 7. Khởi tạo GRPOTrainer
     print("[Trainer] Khởi tạo GRPOTrainer...")
