@@ -16,6 +16,10 @@ Ví dụ:
     python method_c_rpdi_ee/run_controls.py --methods hardtrunc:130,random --output_file results/controls_768.jsonl
     python method_c_rpdi_ee/run_controls.py --max_new_tokens 2048 --end 300 \\
         --methods standard,rpdi:16:1.5,rpdi:512:2.0 --output_file results/budget_2048.jsonl
+
+Mô hình sau RLVR (gắn adapter LoRA; tên phương pháp có tiền tố 'rlvr_' để gộp được với kết quả mô hình gốc):
+    python method_c_rpdi_ee/run_controls.py --adapter_dir /content/drive/MyDrive/slm_rlvr/grpo_run1/checkpoint-300 \\
+        --end 300 --methods standard,rpdi:16:1.5,hardtrunc:130 --output_file results/rlvr_eval.jsonl
 """
 
 import argparse
@@ -56,6 +60,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--random_ref", type=str, default=DEFAULT_RANDOM_REF,
                         help="File kết quả RPDI-EE dùng làm phân phối bước phanh cho phương pháp 'random'.")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--adapter_dir", type=str, default=None,
+                        help="Thư mục adapter LoRA (checkpoint GRPO hoặc adapter cuối); được gộp vào mô hình gốc trước khi sinh.")
+    parser.add_argument("--method_prefix", type=str, default=None,
+                        help="Tiền tố tên phương pháp trong kết quả (mặc định 'rlvr_' khi có --adapter_dir, ngược lại rỗng).")
     parser.add_argument("--output_file", type=str, required=True)
     return parser.parse_args()
 
@@ -166,13 +174,16 @@ def run_one(model, tokenizer, question: str, cfg: Dict[str, Any], max_new_tokens
         "early_exited": bool(getattr(processor, "early_exited", False)),
         "exit_step": int(getattr(processor, "force_exit_step", -1)),
         "scheduled_exit_at": exit_at,
+        # Bộ xử lý đã sửa ngừng giám sát khi mô hình tự sinh </think>, nên mọi lần phanh đều trong pha suy nghĩ
+        "brake_in_think_phase": bool(getattr(processor, "early_exited", False)),
         "response_text": tokenizer.decode(generated, skip_special_tokens=False),
     }
 
 
 def main() -> None:
     args = parse_args()
-    methods = [parse_method(m) for m in args.methods.split(",") if m.strip()]
+    prefix = args.method_prefix if args.method_prefix is not None else ("rlvr_" if args.adapter_dir else "")
+    methods = [(prefix + key, cfg) for key, cfg in (parse_method(m) for m in args.methods.split(",") if m.strip())]
     dataset = load_gsm8k_test(filepath=args.data_file)[args.start:args.end]
 
     exit_steps: List[int] = []
@@ -189,6 +200,15 @@ def main() -> None:
 
     from common.model_loader import load_model_and_tokenizer
     model, tokenizer = load_model_and_tokenizer(model_id=args.model_id, torch_dtype=args.torch_dtype)
+    if args.adapter_dir:
+        from peft import PeftModel
+
+        from common.peft_compat import disable_incompatible_torchao
+
+        disable_incompatible_torchao()
+        print(f"[*] Gắn và gộp adapter LoRA từ {args.adapter_dir}")
+        model = PeftModel.from_pretrained(model, args.adapter_dir).merge_and_unload()
+        model.eval()
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output_file)), exist_ok=True)
     t0 = time.time()
@@ -205,6 +225,7 @@ def main() -> None:
                 "method": key,
                 "max_new_tokens": args.max_new_tokens,
                 "ground_truth": sample["ground_truth"],
+                "adapter_dir": args.adapter_dir,
                 **res,
             }
             fout.write(json.dumps(record, ensure_ascii=False) + "\n")

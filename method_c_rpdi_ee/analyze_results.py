@@ -101,6 +101,9 @@ def is_think_phase_brake(rec: Dict[str, Any], std: Optional[Dict[str, Any]], bud
     """
     if not rec.get("early_exited"):
         return False
+    if "brake_in_think_phase" in rec:
+        # Bản ghi mới tự ghi nhận; độ dài suy nghĩ của 'standard' mô hình gốc không áp dụng cho mô hình RLVR
+        return bool(rec["brake_in_think_phase"])
     if std is None or std["total_tokens"] >= budget:
         return True
     return rec.get("exit_step", -1) <= std["think_tokens"] + 2
