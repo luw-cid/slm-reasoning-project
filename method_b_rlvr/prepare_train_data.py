@@ -88,7 +88,7 @@ def prepare_rlvr_dataset(
     print("[DataPrep] Đang tải tập dữ liệu gốc GSM8K (split='train') từ Hugging Face datasets...")
     try:
         from datasets import load_dataset
-        raw_dataset = load_dataset("gsm8k", "main", split="train")
+        raw_dataset = load_dataset("openai/gsm8k", "main", split="train")
     except Exception as e:
         print(f"[Lỗi] Không thể tải dataset qua Hugging Face: {e}")
         print("Vui lòng đảm bảo đã kết nối Internet hoặc đã cài đặt thư viện 'datasets'.")

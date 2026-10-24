@@ -54,7 +54,7 @@ def download_via_hf(split: str) -> List[Dict[str, Any]]:
     from datasets import load_dataset
 
     print(f"[*] Đang tải GSM8K (split='{split}') từ Hugging Face Hub...")
-    ds = load_dataset("gsm8k", "main", split=split)
+    ds = load_dataset("openai/gsm8k", "main", split=split)
     items = []
     for idx, row in enumerate(ds):
         q = row["question"].strip()
