@@ -95,7 +95,7 @@ def load_rlvr_model(base_model_id: str, adapter_dir: str):
     print(f"[ModelLoader] Đang nạp tokenizer từ '{base_model_id}'...")
     tokenizer = AutoTokenizer.from_pretrained(base_model_id)
 
-    dtype = torch.bfloat16 if (torch.cuda.is_available() and torch.cuda.is_bf16_supported()) else (
+    dtype = torch.bfloat16 if (torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8) else (
         torch.float16 if torch.cuda.is_available() else torch.float32
     )
 

@@ -248,7 +248,9 @@ def train_grpo():
 
     # 3. Cấu hình kiểu dữ liệu và lượng tử hóa
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    # Không dùng torch.cuda.is_bf16_supported(): bản PyTorch mới trả True cả trên T4 (bf16 giả lập),
+    # khiến autocast chạy bf16 và kernel log-prob của TRL lỗi. bf16 thật cần compute capability >= 8.0
+    use_bf16 = torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8
     use_fp16 = torch.cuda.is_available() and not use_bf16
 
     import transformers

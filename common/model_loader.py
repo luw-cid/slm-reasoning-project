@@ -45,7 +45,7 @@ def load_model_and_tokenizer(
 
     # Xác định kiểu dữ liệu (độ chính xác) tối ưu cho phần cứng
     if torch_dtype == "auto":
-        if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+        if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8:
             dtype = torch.bfloat16
         elif torch.cuda.is_available():
             dtype = torch.float16
