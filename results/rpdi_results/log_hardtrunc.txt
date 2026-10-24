@@ -1,0 +1,206 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[*] 200 câu x 1 phương pháp | Còn 200 lượt chạy (đã có 0).
+[ModelLoader] Đang tải tokenizer từ 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'...
+[ModelLoader] Đang tải trọng số mô hình với torch_dtype=torch.bfloat16, device_map=auto...
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   0%|          | 1/339 [00:00<00:35,  9.64it/s]Loading weights:   1%|          | 2/339 [00:02<06:33,  1.17s/it]Loading weights:   1%|          | 4/339 [00:02<02:49,  1.98it/s]Loading weights:   2%|▏         | 6/339 [00:02<01:37,  3.42it/s]Loading weights:   5%|▍         | 16/339 [00:02<00:25, 12.75it/s]Loading weights:   6%|▌         | 20/339 [00:02<00:22, 14.06it/s]Loading weights:   8%|▊         | 27/339 [00:02<00:15, 20.04it/s]Loading weights:   9%|▉         | 31/339 [00:03<00:15, 19.57it/s]Loading weights:  12%|█▏        | 40/339 [00:03<00:12, 24.34it/s]Loading weights:  13%|█▎        | 44/339 [00:03<00:11, 26.12it/s]Loading weights:  15%|█▌        | 52/339 [00:03<00:10, 27.79it/s]Loading weights:  17%|█▋        | 56/339 [00:03<00:09, 29.24it/s]Loading weights:  19%|█▊        | 63/339 [00:04<00:11, 24.56it/s]Loading weights:  22%|██▏       | 75/339 [00:04<00:08, 30.85it/s]Loading weights:  24%|██▍       | 82/339 [00:04<00:07, 34.58it/s]Loading weights:  26%|██▌       | 88/339 [00:04<00:06, 38.49it/s]Loading weights:  27%|██▋       | 93/339 [00:04<00:07, 34.22it/s]Loading weights:  29%|██▉       | 99/339 [00:05<00:06, 35.73it/s]Loading weights:  30%|███       | 103/339 [00:05<00:08, 28.97it/s]Loading weights:  33%|███▎      | 112/339 [00:05<00:07, 31.62it/s]Loading weights:  34%|███▍      | 116/339 [00:05<00:06, 32.72it/s]Loading weights:  37%|███▋      | 124/339 [00:05<00:06, 32.53it/s]Loading weights:  38%|███▊      | 128/339 [00:06<00:06, 32.35it/s]Loading weights:  40%|███▉      | 135/339 [00:06<00:05, 37.02it/s]Loading weights:  41%|████      | 139/339 [00:06<00:06, 31.44it/s]Loading weights:  44%|████▎     | 148/339 [00:06<00:04, 38.76it/s]Loading weights:  45%|████▌     | 153/339 [00:06<00:05, 33.23it/s]Loading weights:  47%|████▋     | 160/339 [00:06<00:04, 36.88it/s]Loading weights:  48%|████▊     | 164/339 [00:07<00:05, 30.49it/s]Loading weights:  51%|█████     | 172/339 [00:07<00:04, 36.31it/s]Loading weights:  52%|█████▏    | 176/339 [00:07<00:05, 30.32it/s]Loading weights:  54%|█████▍    | 184/339 [00:07<00:04, 37.85it/s]Loading weights:  56%|█████▌    | 189/339 [00:07<00:04, 33.00it/s]Loading weights:  58%|█████▊    | 196/339 [00:08<00:04, 31.29it/s]Loading weights:  59%|█████▉    | 200/339 [00:08<00:04, 31.66it/s]Loading weights:  61%|██████▏   | 208/339 [00:08<00:03, 32.94it/s]Loading weights:  63%|██████▎   | 212/339 [00:08<00:03, 33.04it/s]Loading weights:  65%|██████▍   | 220/339 [00:08<00:03, 32.84it/s]Loading weights:  66%|██████▌   | 224/339 [00:08<00:03, 33.19it/s]Loading weights:  68%|██████▊   | 232/339 [00:09<00:02, 39.14it/s]Loading weights:  70%|██████▉   | 237/339 [00:09<00:03, 32.56it/s]Loading weights:  72%|███████▏  | 244/339 [00:09<00:02, 36.84it/s]Loading weights:  73%|███████▎  | 248/339 [00:09<00:02, 30.38it/s]Loading weights:  76%|███████▌  | 256/339 [00:09<00:02, 30.53it/s]Loading weights:  77%|███████▋  | 260/339 [00:09<00:02, 31.05it/s]Loading weights:  79%|███████▉  | 268/339 [00:10<00:02, 31.71it/s]Loading weights:  80%|████████  | 272/339 [00:10<00:02, 31.96it/s]Loading weights:  83%|████████▎ | 280/339 [00:10<00:01, 38.10it/s]Loading weights:  84%|████████▍ | 284/339 [00:10<00:01, 29.89it/s]Loading weights:  86%|████████▌ | 291/339 [00:10<00:01, 30.51it/s]Loading weights:  87%|████████▋ | 295/339 [00:11<00:01, 31.74it/s]Loading weights:  90%|████████▉ | 304/339 [00:11<00:01, 33.14it/s]Loading weights:  91%|█████████ | 308/339 [00:11<00:00, 33.37it/s]Loading weights:  93%|█████████▎| 316/339 [00:11<00:00, 32.73it/s]Loading weights:  94%|█████████▍| 320/339 [00:11<00:00, 33.69it/s]Loading weights:  97%|█████████▋| 328/339 [00:12<00:00, 31.62it/s]Loading weights:  98%|█████████▊| 332/339 [00:12<00:00, 32.60it/s]Loading weights: 100%|██████████| 339/339 [00:12<00:00, 27.73it/s]
+[1/200] id=100 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 6.05h
+[2/200] id=101 hardtrunc_N130: ĐÚNG | 361 tok (think 130) | ETA 4.40h
+[3/200] id=102 hardtrunc_N130: SAI | 360 tok (think 130) | ETA 3.82h
+[4/200] id=103 hardtrunc_N130: ĐÚNG | 651 tok (think 130) | ETA 4.05h
+[5/200] id=104 hardtrunc_N130: ĐÚNG | 508 tok (think 130) | ETA 3.95h
+[6/200] id=105 hardtrunc_N130: ĐÚNG | 455 tok (think 130) | ETA 3.80h
+[7/200] id=106 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 4.02h
+[8/200] id=107 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 4.18h
+[9/200] id=108 hardtrunc_N130: ĐÚNG | 677 tok (think 130) | ETA 4.24h
+[10/200] id=109 hardtrunc_N130: ĐÚNG | 602 tok (think 130) | ETA 4.22h
+[11/200] id=110 hardtrunc_N130: ĐÚNG | 695 tok (think 130) | ETA 4.27h
+[12/200] id=111 hardtrunc_N130: ĐÚNG | 744 tok (think 130) | ETA 4.34h
+[13/200] id=112 hardtrunc_N130: ĐÚNG | 440 tok (think 130) | ETA 4.22h
+[14/200] id=113 hardtrunc_N130: ĐÚNG | 299 tok (think 104) | ETA 4.05h
+[15/200] id=114 hardtrunc_N130: ĐÚNG | 682 tok (think 130) | ETA 4.07h
+[16/200] id=115 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 4.13h
+[17/200] id=116 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 4.18h
+[18/200] id=117 hardtrunc_N130: ĐÚNG | 241 tok (think 105) | ETA 4.01h
+[19/200] id=118 hardtrunc_N130: ĐÚNG | 289 tok (think 130) | ETA 3.88h
+[20/200] id=119 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.93h
+[21/200] id=120 hardtrunc_N130: ĐÚNG | 291 tok (think 79) | ETA 3.82h
+[22/200] id=121 hardtrunc_N130: ĐÚNG | 276 tok (think 130) | ETA 3.71h
+[23/200] id=122 hardtrunc_N130: SAI | 725 tok (think 130) | ETA 3.73h
+[24/200] id=123 hardtrunc_N130: ĐÚNG | 552 tok (think 130) | ETA 3.71h
+[25/200] id=124 hardtrunc_N130: ĐÚNG | 595 tok (think 130) | ETA 3.69h
+[26/200] id=125 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.72h
+[27/200] id=126 hardtrunc_N130: ĐÚNG | 565 tok (think 130) | ETA 3.70h
+[28/200] id=127 hardtrunc_N130: ĐÚNG | 256 tok (think 92) | ETA 3.61h
+[29/200] id=128 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 3.63h
+[30/200] id=129 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.65h
+[31/200] id=130 hardtrunc_N130: ĐÚNG | 501 tok (think 130) | ETA 3.62h
+[32/200] id=131 hardtrunc_N130: ĐÚNG | 236 tok (think 78) | ETA 3.53h
+[33/200] id=132 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.55h
+[34/200] id=133 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 3.56h
+[35/200] id=134 hardtrunc_N130: ĐÚNG | 267 tok (think 130) | ETA 3.49h
+[36/200] id=135 hardtrunc_N130: ĐÚNG | 380 tok (think 130) | ETA 3.44h
+[37/200] id=136 hardtrunc_N130: ĐÚNG | 290 tok (think 129) | ETA 3.37h
+[38/200] id=137 hardtrunc_N130: SAI | 281 tok (think 130) | ETA 3.31h
+[39/200] id=138 hardtrunc_N130: SAI | 338 tok (think 130) | ETA 3.25h
+[40/200] id=139 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.27h
+[41/200] id=140 hardtrunc_N130: ĐÚNG | 539 tok (think 130) | ETA 3.25h
+[42/200] id=141 hardtrunc_N130: ĐÚNG | 577 tok (think 130) | ETA 3.23h
+[43/200] id=142 hardtrunc_N130: ĐÚNG | 318 tok (think 121) | ETA 3.18h
+[44/200] id=143 hardtrunc_N130: SAI | 729 tok (think 130) | ETA 3.18h
+[45/200] id=144 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.19h
+[46/200] id=145 hardtrunc_N130: ĐÚNG | 271 tok (think 130) | ETA 3.13h
+[47/200] id=146 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.14h
+[48/200] id=147 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.14h
+[49/200] id=148 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.15h
+[50/200] id=149 hardtrunc_N130: ĐÚNG | 666 tok (think 130) | ETA 3.14h
+[51/200] id=150 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 3.14h
+[52/200] id=151 hardtrunc_N130: ĐÚNG | 693 tok (think 130) | ETA 3.13h
+[53/200] id=152 hardtrunc_N130: ĐÚNG | 241 tok (think 130) | ETA 3.08h
+[54/200] id=153 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.08h
+[55/200] id=154 hardtrunc_N130: ĐÚNG | 755 tok (think 130) | ETA 3.07h
+[56/200] id=155 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.07h
+[57/200] id=156 hardtrunc_N130: ĐÚNG | 353 tok (think 130) | ETA 3.03h
+[58/200] id=157 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 3.03h
+[59/200] id=158 hardtrunc_N130: ĐÚNG | 710 tok (think 130) | ETA 3.02h
+[60/200] id=159 hardtrunc_N130: ĐÚNG | 295 tok (think 111) | ETA 2.97h
+[61/200] id=160 hardtrunc_N130: ĐÚNG | 481 tok (think 130) | ETA 2.94h
+[62/200] id=161 hardtrunc_N130: ĐÚNG | 630 tok (think 130) | ETA 2.93h
+[63/200] id=162 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 2.92h
+[64/200] id=163 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 2.91h
+[65/200] id=164 hardtrunc_N130: ĐÚNG | 479 tok (think 130) | ETA 2.89h
+[66/200] id=165 hardtrunc_N130: SAI | 291 tok (think 76) | ETA 2.84h
+[67/200] id=166 hardtrunc_N130: ĐÚNG | 297 tok (think 130) | ETA 2.80h
+[68/200] id=167 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.80h
+[69/200] id=168 hardtrunc_N130: ĐÚNG | 251 tok (think 107) | ETA 2.75h
+[70/200] id=169 hardtrunc_N130: ĐÚNG | 422 tok (think 130) | ETA 2.72h
+[71/200] id=170 hardtrunc_N130: ĐÚNG | 499 tok (think 130) | ETA 2.70h
+[72/200] id=171 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.69h
+[73/200] id=172 hardtrunc_N130: ĐÚNG | 734 tok (think 130) | ETA 2.68h
+[74/200] id=173 hardtrunc_N130: SAI | 437 tok (think 130) | ETA 2.65h
+[75/200] id=174 hardtrunc_N130: ĐÚNG | 492 tok (think 130) | ETA 2.62h
+[76/200] id=175 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 2.61h
+[77/200] id=176 hardtrunc_N130: SAI | 768 tok (think 63) | ETA 2.60h
+[78/200] id=177 hardtrunc_N130: ĐÚNG | 485 tok (think 130) | ETA 2.58h
+[79/200] id=178 hardtrunc_N130: ĐÚNG | 543 tok (think 130) | ETA 2.56h
+[80/200] id=179 hardtrunc_N130: ĐÚNG | 597 tok (think 130) | ETA 2.54h
+[81/200] id=180 hardtrunc_N130: ĐÚNG | 276 tok (think 115) | ETA 2.50h
+[82/200] id=181 hardtrunc_N130: ĐÚNG | 337 tok (think 129) | ETA 2.47h
+[83/200] id=182 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.46h
+[84/200] id=183 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.44h
+[85/200] id=184 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.43h
+[86/200] id=185 hardtrunc_N130: ĐÚNG | 260 tok (think 105) | ETA 2.40h
+[87/200] id=186 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 2.39h
+[88/200] id=187 hardtrunc_N130: ĐÚNG | 342 tok (think 130) | ETA 2.35h
+[89/200] id=188 hardtrunc_N130: ĐÚNG | 682 tok (think 130) | ETA 2.34h
+[90/200] id=189 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 2.33h
+[91/200] id=190 hardtrunc_N130: ĐÚNG | 261 tok (think 122) | ETA 2.29h
+[92/200] id=191 hardtrunc_N130: ĐÚNG | 276 tok (think 113) | ETA 2.26h
+[93/200] id=192 hardtrunc_N130: ĐÚNG | 392 tok (think 113) | ETA 2.23h
+[94/200] id=193 hardtrunc_N130: ĐÚNG | 180 tok (think 130) | ETA 2.19h
+[95/200] id=194 hardtrunc_N130: ĐÚNG | 249 tok (think 130) | ETA 2.16h
+[96/200] id=195 hardtrunc_N130: ĐÚNG | 740 tok (think 130) | ETA 2.15h
+[97/200] id=196 hardtrunc_N130: ĐÚNG | 475 tok (think 130) | ETA 2.12h
+[98/200] id=197 hardtrunc_N130: ĐÚNG | 631 tok (think 130) | ETA 2.10h
+[99/200] id=198 hardtrunc_N130: ĐÚNG | 315 tok (think 130) | ETA 2.07h
+[100/200] id=199 hardtrunc_N130: ĐÚNG | 343 tok (think 130) | ETA 2.05h
+[101/200] id=200 hardtrunc_N130: ĐÚNG | 626 tok (think 130) | ETA 2.03h
+[102/200] id=201 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 2.02h
+[103/200] id=202 hardtrunc_N130: ĐÚNG | 410 tok (think 130) | ETA 1.99h
+[104/200] id=203 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.98h
+[105/200] id=204 hardtrunc_N130: ĐÚNG | 313 tok (think 130) | ETA 1.95h
+[106/200] id=205 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.93h
+[107/200] id=206 hardtrunc_N130: ĐÚNG | 757 tok (think 130) | ETA 1.92h
+[108/200] id=207 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.91h
+[109/200] id=208 hardtrunc_N130: ĐÚNG | 525 tok (think 130) | ETA 1.88h
+[110/200] id=209 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.87h
+[111/200] id=210 hardtrunc_N130: SAI | 375 tok (think 130) | ETA 1.84h
+[112/200] id=211 hardtrunc_N130: ĐÚNG | 532 tok (think 130) | ETA 1.82h
+[113/200] id=212 hardtrunc_N130: ĐÚNG | 525 tok (think 130) | ETA 1.80h
+[114/200] id=213 hardtrunc_N130: ĐÚNG | 553 tok (think 130) | ETA 1.78h
+[115/200] id=214 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.76h
+[116/200] id=215 hardtrunc_N130: ĐÚNG | 280 tok (think 130) | ETA 1.74h
+[117/200] id=216 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.72h
+[118/200] id=217 hardtrunc_N130: ĐÚNG | 240 tok (think 93) | ETA 1.69h
+[119/200] id=218 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.68h
+[120/200] id=219 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 1.66h
+[121/200] id=220 hardtrunc_N130: ĐÚNG | 359 tok (think 130) | ETA 1.63h
+[122/200] id=221 hardtrunc_N130: ĐÚNG | 495 tok (think 130) | ETA 1.61h
+[123/200] id=222 hardtrunc_N130: ĐÚNG | 617 tok (think 130) | ETA 1.59h
+[124/200] id=223 hardtrunc_N130: ĐÚNG | 300 tok (think 113) | ETA 1.57h
+[125/200] id=224 hardtrunc_N130: ĐÚNG | 557 tok (think 130) | ETA 1.55h
+[126/200] id=225 hardtrunc_N130: ĐÚNG | 291 tok (think 112) | ETA 1.52h
+[127/200] id=226 hardtrunc_N130: ĐÚNG | 725 tok (think 130) | ETA 1.50h
+[128/200] id=227 hardtrunc_N130: SAI | 605 tok (think 130) | ETA 1.48h
+[129/200] id=228 hardtrunc_N130: ĐÚNG | 564 tok (think 130) | ETA 1.46h
+[130/200] id=229 hardtrunc_N130: ĐÚNG | 709 tok (think 130) | ETA 1.44h
+[131/200] id=230 hardtrunc_N130: ĐÚNG | 684 tok (think 130) | ETA 1.43h
+[132/200] id=231 hardtrunc_N130: ĐÚNG | 258 tok (think 99) | ETA 1.40h
+[133/200] id=232 hardtrunc_N130: ĐÚNG | 337 tok (think 120) | ETA 1.38h
+[134/200] id=233 hardtrunc_N130: ĐÚNG | 305 tok (think 130) | ETA 1.35h
+[135/200] id=234 hardtrunc_N130: SAI | 509 tok (think 130) | ETA 1.33h
+[136/200] id=235 hardtrunc_N130: ĐÚNG | 354 tok (think 130) | ETA 1.31h
+[137/200] id=236 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.29h
+[138/200] id=237 hardtrunc_N130: ĐÚNG | 352 tok (think 130) | ETA 1.26h
+[139/200] id=238 hardtrunc_N130: ĐÚNG | 550 tok (think 130) | ETA 1.24h
+[140/200] id=239 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.23h
+[141/200] id=240 hardtrunc_N130: ĐÚNG | 730 tok (think 130) | ETA 1.21h
+[142/200] id=241 hardtrunc_N130: SAI | 238 tok (think 80) | ETA 1.18h
+[143/200] id=242 hardtrunc_N130: SAI | 246 tok (think 130) | ETA 1.16h
+[144/200] id=243 hardtrunc_N130: ĐÚNG | 605 tok (think 130) | ETA 1.14h
+[145/200] id=244 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 1.12h
+[146/200] id=245 hardtrunc_N130: ĐÚNG | 270 tok (think 130) | ETA 1.10h
+[147/200] id=246 hardtrunc_N130: SAI | 712 tok (think 130) | ETA 1.08h
+[148/200] id=247 hardtrunc_N130: ĐÚNG | 452 tok (think 130) | ETA 1.06h
+[149/200] id=248 hardtrunc_N130: ĐÚNG | 261 tok (think 119) | ETA 1.03h
+[150/200] id=249 hardtrunc_N130: ĐÚNG | 731 tok (think 130) | ETA 1.02h
+[151/200] id=250 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 1.00h
+[152/200] id=251 hardtrunc_N130: ĐÚNG | 231 tok (think 90) | ETA 0.97h
+[153/200] id=252 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.96h
+[154/200] id=253 hardtrunc_N130: ĐÚNG | 360 tok (think 130) | ETA 0.93h
+[155/200] id=254 hardtrunc_N130: ĐÚNG | 501 tok (think 130) | ETA 0.91h
+[156/200] id=255 hardtrunc_N130: SAI | 766 tok (think 130) | ETA 0.90h
+[157/200] id=256 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 0.88h
+[158/200] id=257 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.86h
+[159/200] id=258 hardtrunc_N130: SAI | 453 tok (think 130) | ETA 0.84h
+[160/200] id=259 hardtrunc_N130: ĐÚNG | 195 tok (think 130) | ETA 0.81h
+[161/200] id=260 hardtrunc_N130: ĐÚNG | 489 tok (think 130) | ETA 0.79h
+[162/200] id=261 hardtrunc_N130: ĐÚNG | 351 tok (think 122) | ETA 0.77h
+[163/200] id=262 hardtrunc_N130: ĐÚNG | 254 tok (think 108) | ETA 0.75h
+[164/200] id=263 hardtrunc_N130: ĐÚNG | 707 tok (think 130) | ETA 0.73h
+[165/200] id=264 hardtrunc_N130: ĐÚNG | 525 tok (think 130) | ETA 0.71h
+[166/200] id=265 hardtrunc_N130: ĐÚNG | 651 tok (think 130) | ETA 0.69h
+[167/200] id=266 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.67h
+[168/200] id=267 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 0.65h
+[169/200] id=268 hardtrunc_N130: ĐÚNG | 293 tok (think 130) | ETA 0.63h
+[170/200] id=269 hardtrunc_N130: ĐÚNG | 335 tok (think 130) | ETA 0.61h
+[171/200] id=270 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 0.59h
+[172/200] id=271 hardtrunc_N130: SAI | 650 tok (think 130) | ETA 0.57h
+[173/200] id=272 hardtrunc_N130: SAI | 327 tok (think 124) | ETA 0.55h
+[174/200] id=273 hardtrunc_N130: ĐÚNG | 338 tok (think 130) | ETA 0.53h
+[175/200] id=274 hardtrunc_N130: ĐÚNG | 567 tok (think 130) | ETA 0.51h
+[176/200] id=275 hardtrunc_N130: ĐÚNG | 690 tok (think 130) | ETA 0.49h
+[177/200] id=276 hardtrunc_N130: ĐÚNG | 761 tok (think 130) | ETA 0.47h
+[178/200] id=277 hardtrunc_N130: ĐÚNG | 614 tok (think 130) | ETA 0.45h
+[179/200] id=278 hardtrunc_N130: ĐÚNG | 506 tok (think 130) | ETA 0.43h
+[180/200] id=279 hardtrunc_N130: ĐÚNG | 659 tok (think 130) | ETA 0.41h
+[181/200] id=280 hardtrunc_N130: ĐÚNG | 595 tok (think 130) | ETA 0.39h
+[182/200] id=281 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.37h
+[183/200] id=282 hardtrunc_N130: ĐÚNG | 618 tok (think 130) | ETA 0.35h
+[184/200] id=283 hardtrunc_N130: ĐÚNG | 579 tok (think 130) | ETA 0.33h
+[185/200] id=284 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.31h
+[186/200] id=285 hardtrunc_N130: ĐÚNG | 279 tok (think 78) | ETA 0.29h
+[187/200] id=286 hardtrunc_N130: ĐÚNG | 181 tok (think 130) | ETA 0.26h
+[188/200] id=287 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.24h
+[189/200] id=288 hardtrunc_N130: ĐÚNG | 502 tok (think 130) | ETA 0.22h
+[190/200] id=289 hardtrunc_N130: ĐÚNG | 715 tok (think 130) | ETA 0.20h
+[191/200] id=290 hardtrunc_N130: ĐÚNG | 588 tok (think 130) | ETA 0.18h
+[192/200] id=291 hardtrunc_N130: ĐÚNG | 588 tok (think 130) | ETA 0.16h
+[193/200] id=292 hardtrunc_N130: SAI | 372 tok (think 130) | ETA 0.14h
+[194/200] id=293 hardtrunc_N130: SAI | 768 tok (think 130) | ETA 0.12h
+[195/200] id=294 hardtrunc_N130: ĐÚNG | 522 tok (think 130) | ETA 0.10h
+[196/200] id=295 hardtrunc_N130: ĐÚNG | 650 tok (think 130) | ETA 0.08h
+[197/200] id=296 hardtrunc_N130: ĐÚNG | 768 tok (think 130) | ETA 0.06h
+[198/200] id=297 hardtrunc_N130: SAI | 675 tok (think 130) | ETA 0.04h
+[199/200] id=298 hardtrunc_N130: SAI | 355 tok (think 122) | ETA 0.02h
+[200/200] id=299 hardtrunc_N130: SAI | 462 tok (think 130) | ETA 0.00h

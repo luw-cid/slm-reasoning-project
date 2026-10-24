@@ -1,0 +1,184 @@
+================================================================================
+TỔNG QUAN ĐỀ TÀI & ĐỊNH HƯỚNG NGHIÊN CỨU (PROJECT CONTEXT)
+Dự án: Nghiên Cứu 2 Phương Pháp Mới Nâng Cao Năng Lực Suy Luận Của SLM
+================================================================================
+
+1. THÔNG TIN CHUNG
+--------------------------------------------------------------------------------
+- Loại hình: ĐỒ ÁN TỐT NGHIỆP ĐẠI HỌC (Khối lượng: 6 TÍN CHỈ).
+- Tên đề tài: Nghiên cứu 2 phương pháp mới nhằm nâng cao và tối ưu hóa năng lực
+  suy luận chuỗi tư duy (Chain-of-Thought - CoT) trên mô hình ngôn ngữ nhỏ
+  (Small Language Models - SLM).
+- Giảng viên hướng dẫn: Thầy Vũ Hồng.
+- Tính cấp thiết & Điểm nhấn cốt lõi:
+  Đề tài nghiên cứu, hiện thực và phân tích 2 phương pháp thuộc 2 trường phái khác nhau
+  (can thiệp lúc sinh và huấn luyện tăng cường) trên SLM 1.5B trong điều kiện ngân sách
+  token cực hẹp, giải quyết bài toán nghẽn token và suy luận lạc hướng.
+  Lưu ý: cả hai phương pháp đều đã có tiền lệ (RPDI-EE: Guan et al., 2026 - đã thử trên chính
+  mô hình 1.5B với 16k token; GRPO trên R1-Distill-1.5B: nhiều công trình). Điểm mới của đề tài
+  nằm ở chế độ ngân sách hẹp, phân tích cơ chế và tương tác giữa 2 phương pháp.
+- Mô hình nghiên cứu xuyên suốt: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B (1.5B tham số).
+  (Mô hình SLM được chưng cất tri thức suy luận từ mô hình nền tảng DeepSeek-R1 lớn).
+- Tập dữ liệu chuẩn hóa: GSM8K (Grade School Math 8K).
+  + Tập con thẩm định nhanh / Ablation study: 100 câu độc lập (common/data/gsm8k_test_100.json).
+  + Tập kiểm chứng quy mô lớn: 1,319 câu test chuẩn của GSM8K.
+- Môi trường thực nghiệm & Thiết lập kỹ thuật:
+  + Phần cứng: NVIDIA GPU (hỗ trợ bfloat16 / float16).
+  + Chiến lược giải mã: Greedy Decoding (do_sample=False) để đảm bảo 100% tính tất định
+    và khả năng tái lập khoa học (reproducibility), loại bỏ phương sai nhiệt độ.
+  + Ngân sách sinh tối đa: max_new_tokens = 768 tokens (mô phỏng kịch bản triển khai
+    thực tế trên thiết bị phần cứng giới hạn / edge devices).
+
+--------------------------------------------------------------------------------
+2. BỐI CẢNH VÀ VẤN ĐỀ CỐT LÕI (PROBLEM STATEMENT)
+--------------------------------------------------------------------------------
+- Bẫy suy nghĩ luẩn quẩn (Overthinking Trapping) trên SLM:
+  Các mô hình lý luận thế hệ mới (như DeepSeek-R1) sinh ra khối suy nghĩ <think>...</think>
+  trước khi đưa ra câu trả lời chính thức. Ở các mô hình lớn (LLM 7B-70B+), việc suy nghĩ dài
+  thường cải thiện độ chính xác. Tuy nhiên, trên mô hình nhỏ (SLM 1.5B):
+  + Dung lượng tham số và tri thức nội vi hạn hẹp khiến mô hình dễ rơi vào các vòng lặp tư duy,
+    tự nghi ngờ bản thân và phân vân không cần thiết.
+  + Hậu quả chí mạng ("Nghẽn token"): Ở chế độ sinh tự nhiên (Standard Baseline), có tới 
+    47.09% số câu hỏi (trên 705 câu test) mô hình sinh khối <think> kéo dài cạn kiệt toàn bộ
+    ngân sách 768 tokens mà KHÔNG KỊP đóng thẻ </think>.
+  + Do cạn token, mô hình không kịp viết câu trả lời kết luận, dẫn đến việc bị chấm sai hàng loạt
+    dù bước đầu có thể đã tính toán đúng (Độ chính xác của Standard Baseline chỉ đạt 53.19%).
+
+--------------------------------------------------------------------------------
+3. HAI PHƯƠNG PHÁP CỦA ĐỀ TÀI & ĐIỂM MỚI
+--------------------------------------------------------------------------------
+Đề tài hiện thực và kiểm chứng 2 phương pháp bổ trợ lẫn nhau, đại diện cho
+2 trường phái giải pháp lớn (Can thiệp lúc sinh vs. Huấn luyện nội vi):
+
+================================================================================
+PHƯƠNG PHÁP 1 (Nhánh C - Inference-time Intervention):
+RPDI-EE (Reasoning Path Deviation Index - Early Exit trên SLM)
+Bài báo gốc: Guan et al., 2026, arXiv:2603.14251 - "Mitigating Overthinking in LRLMs via
+Reasoning Path Deviation Monitoring".
+================================================================================
+- Bài báo gốc (đã đối chiếu):
+  + 8 mô hình, CÓ DeepSeek-R1-Distill-Qwen-1.5B; giải mã Greedy; ngân sách 16,384 token
+    (32,768 cho Qwen3-Thinking); W=512, lambda=2.0.
+  + Baseline: Vanilla CoT, NoThinking, ThinkLess, DEER, Dynasor-CoT (trên 1.5B chỉ có Vanilla
+    và DEER). KHÔNG có baseline cắt cứng.
+  + Kết quả 1.5B: Math Easy (GSM8K+AMC23+MATH500 gộp) 65.7% -> 69.4% (+3.7).
+- Đóng góp riêng của đề tài:
+  + Chế độ ngân sách cực hẹp (768 token, mô phỏng thiết bị biên): gần nửa số câu của baseline
+    cạn ngân sách, nên cơ chế tác động của RPDI-EE khác hẳn bài gốc.
+  + Siêu tham số tối ưu dịch chuyển theo ngân sách: W=512, lambda=2.0 -> W=16, lambda=1.5.
+  + Phát hiện "kẹt đập nhân tạo" do min_steps=64.
+  + Bổ sung đối chứng với cắt cứng và phanh ngẫu nhiên (bài gốc không có).
+- Cơ chế hoạt động:
+  + Giám sát trực tiếp phân bố xác suất và entropy động của chuỗi token sinh ra trong pha <think>.
+  + Tính toán chỉ số lệch hướng RPDI = LTF / GTF:
+      * LTF (Local Thinking Fluctuation): Entropy trung bình trượt trong cửa sổ gần nhất W token.
+      * GTF (Global Thinking Fluctuation): Entropy trung bình tích lũy toàn cục từ đầu chuỗi sinh.
+  + Khi RPDI > lambda (độ bất định cục bộ tăng đột biến, thể hiện mạch suy luận bắt đầu lạc hướng,
+    rối loạn hoặc luẩn quẩn), thuật toán chủ động "PHANH SỚM" (Early Exit).
+  + Thuật toán cưỡng bức chèn thẻ đóng </think>\n tại điểm ngắt câu tự nhiên gần nhất,
+    giữ lại ngân sách token còn lại cho mô hình viết lời giải và xuất đáp số kết luận.
+- Kiến trúc triển khai: Tích hợp trực tiếp thành RPDILogitsProcessor chạy trong 1 lệnh
+  generate() duy nhất, bảo toàn 100% KV-Cache, kiểm tra ranh giới câu bằng PyTorch GPU tensor.
+
+================================================================================
+PHƯƠNG PHÁP 2 (Nhánh B - Training-time Alignment):
+RLVR (Reinforcement Learning with Verifiable Rewards qua GRPO + LoRA cho SLM)
+================================================================================
+- Định vị:
+  + Áp dụng học tăng cường với phần thưởng xác minh được (Verifiable Rewards) qua GRPO + LoRA
+    cho SLM 1.5B. GRPO trên R1-Distill-1.5B đã có nhiều công trình (vd: DeepScaleR), nên phần
+    này không phải phương pháp mới.
+  + Điểm mới: khảo sát tương tác giữa phanh từ bên ngoài (RPDI-EE) và khả năng tự điều chỉnh
+    độ dài suy luận sau RLVR, trong cùng điều kiện ngân sách hẹp.
+  + Lưu ý: train_grpo.py dùng max_completion_length=512 (đánh giá ở 768), tức đã ngầm ép
+    mô hình viết ngắn; cần ghi rõ khi so sánh với RPDI-EE.
+
+================================================================================
+KHUNG KẾT HỢP ĐỐI CHỨNG 4 KỊCH BẢN (Combined Evaluation Framework)
+================================================================================
+Đề tài thiết lập ma trận kiểm chứng chéo 4 kịch bản độc lập trên cùng tập test chuẩn:
+  1. Kịch bản 1: Baseline gốc (Mô hình SLM 1.5B nguyên bản, không can thiệp).
+  2. Kịch bản 2: Baseline + RPDI-EE (Can thiệp phanh suy luận từ bên ngoài lúc giải mã).
+  3. Kịch bản 3: Mô hình RLVR (Tự thích nghi và điều chỉnh mạch suy luận từ bên trong sau huấn luyện).
+  4. Kịch bản 4: Mô hình RLVR + RPDI-EE (Kết hợp đồng thời cả 2 phương pháp: tự điều chỉnh nội vi
+     kết hợp hệ thống phanh an toàn ngoại vi).
+
+--------------------------------------------------------------------------------
+4. TIẾN ĐỘ VÀ KẾT QUẢ THỰC NGHIỆM ĐÃ ĐẠT ĐƯỢC
+--------------------------------------------------------------------------------
+Đã hoàn thành các cột mốc thực nghiệm sau của Phương pháp 1 (RPDI-EE):
+
+1. Khắc phục hiện tượng "Kẹt đập nhân tạo" (Artificial Dam Effect):
+   - Phát hiện rào cản nhân tạo ban đầu (min_steps=64, W=8) gây ứ đọng phanh giả tạo tại bước 64-70.
+   - Loại bỏ rào cản nhân tạo: cho phép giám sát ngay khi đủ kích thước cửa sổ (i >= W).
+
+2. Ablation Study quét lưới 16 cấu hình (100 câu GSM8K test = câu 0-99, mô phỏng offline):
+   - W in {16, 32, 64, 128} x lambda in {1.5, 2.0, 2.5, 3.0} và các baseline cắt cứng.
+   - Cấu hình tốt nhất: W=16, lambda=1.5 (78% mô phỏng so với baseline 59%). Đây là góc lưới,
+     cần quét thêm W in {4, 8}, lambda in {1.1, 1.25} trên tập validation (gsm8k_val_200.json).
+   - HardTrunc(N=128) đạt 75%: chênh 3 câu, chưa có ý nghĩa thống kê.
+   - Chạy thật trên chính 100 câu này chỉ đạt 73% (chênh lệch mô phỏng/chạy thật đang chẩn đoán).
+
+3. Kiểm chứng trên 705 câu GSM8K (11.66 giờ GPU):
+   - Kết quả chính báo cáo trên 605 câu held-out (câu 100-704, không dùng để chọn tham số):
+     + Standard 52.23% -> RPDI-EE 71.57% (+19.34 điểm, KTC 95% [+15.5, +23.2],
+       McNemar p ~ 2.4e-21; 141 câu giải cứu vs 24 câu phanh nhầm).
+   - Trên toàn bộ 705 câu: 53.19% -> 71.77% (+18.58); token suy nghĩ 464.53 -> 131.85 (-71.6%).
+   - Tỷ lệ cạn ngân sách: 47.09% -> 21.56%.
+   - Tỷ lệ phanh thật trong pha suy nghĩ: 71.49% (504/705). Con số 80.14% trước đây bị thổi phồng
+     do lỗi phanh trong pha trả lời ở 61 câu (đã sửa trong logits_processor.py).
+   - Cơ chế: toàn bộ mức tăng đến từ câu baseline cạn ngân sách (21.18% -> 63.19% trên 605 câu);
+     câu baseline tự kết thúc không cải thiện (80.44% -> 79.18%).
+
+4. Đóng góp khoa học so với bài báo gốc:
+   - Bài gốc đã thử RPDI-EE trên DeepSeek-R1-Distill-Qwen-1.5B (16k token, +3.7 trên Math Easy).
+     Không được viết "lần đầu kiểm chứng trên SLM 1.5B".
+   - Mức +19 (768 token) và +3.7 (16k token) đo hai hiệu ứng khác nhau (giải cứu do cạn ngân sách
+     so với cải thiện chất lượng suy luận), không so sánh trực tiếp kiểu "gấp nhiều lần".
+   - Đóng góp: chế độ ngân sách hẹp, dịch chuyển siêu tham số theo ngân sách, phân tích cơ chế,
+     đối chứng với cắt cứng/phanh ngẫu nhiên.
+
+--------------------------------------------------------------------------------
+5. CẤU TRÚC REPOSITORY HIỆN TẠI
+--------------------------------------------------------------------------------
+slm-reasoning-project/
+├── common/                  # Nền tảng dùng chung (model_loader, metrics, eval_dataset, seed)
+│   └── data/
+│       └── gsm8k_test_100.json # 100 câu test GSM8K cố định (Zero Data Leakage)
+├── method_c_rpdi_ee/        # Phương pháp 1: RPDI-EE (Inference-time Compute)
+│   ├── logits_processor.py  # Lớp RPDILogitsProcessor can thiệp logits thời gian thực O(1)
+│   ├── runner.py            # Hàm generate_standard và generate_rpdi (Greedy)
+│   ├── evaluate.py          # Script chạy thực nghiệm so sánh Standard vs RPDI-EE
+│   └── ablation/            # Pipeline 3 bước quét lưới 16 cấu hình & vẽ đồ thị Pareto
+├── method_b_rlvr/           # Phương pháp 2: Huấn luyện RLVR qua GRPO + LoRA
+│   ├── prepare_train_data.py# Chuẩn bị dữ liệu GSM8K train 300-500 câu
+│   ├── reward_funcs.py      # Hàm thưởng Accuracy Reward & Format Reward
+│   ├── train_grpo.py        # Kịch bản huấn luyện GRPO bằng TRL
+│   └── evaluate.py          # Đánh giá mô hình sau RLVR
+├── combined/                # Thử nghiệm kết hợp 4 kịch bản đối chứng (run_4_scenarios.py)
+├── results/                 # Dữ liệu kết quả thực nghiệm (JSON, trace)
+│   ├── method_c_results_705.json  # Kết quả 705 câu GSM8K
+│   ├── method_c_results.json      # Kết quả 100 câu Ablation
+│   ├── ablation_grid_results.json # Dữ liệu quét lưới 16 cấu hình
+│   └── baseline_traces.json       # Traces entropy baseline
+├── report/                  # Báo cáo học thuật chi tiết
+│   ├── BAO_CAO_TIEN_DO_KET_QUA_RPDI_EE.md  # Báo cáo tiến độ tổng kết
+│   ├── chuong_4_thuc_nghiem_rpdi_ee.md      # Bản thảo Chương 4 của luận văn
+│   └── pareto_accuracy_vs_tokens.png        # Đồ thị Pareto Frontier
+├── log-705.txt              # Nhật ký thực thi thực nghiệm 705 câu (11.66h GPU)
+├── context.txt              # Tài liệu mô tả ngữ cảnh đề tài và hướng nghiên cứu
+└── README.md                # Tài liệu hướng dẫn sử dụng repo
+
+--------------------------------------------------------------------------------
+6. KẾ HOẠCH VÀ HƯỚNG TRIỂN KHAI TIẾP THEO
+--------------------------------------------------------------------------------
+1. Chạy đối chứng trên 605 câu held-out: cắt cứng 130 token + phanh ngẫu nhiên
+   (method_c_rpdi_ee/run_controls.py), phân tích bằng method_c_rpdi_ee/analyze_results.py.
+2. Chẩn đoán chênh lệch mô phỏng/chạy thật (ablation/diagnose_sim_vs_online.py).
+3. Mở rộng lưới W, lambda trên tập validation 200 câu từ GSM8K train.
+4. Khảo sát theo ngân sách token (768 / 1,536 / 4,096 / 16,384) trên tập con, với cả cấu hình
+   W=16/lambda=1.5 và W=512/lambda=2.0 của bài gốc (nên chuyển sang vLLM cho ngân sách lớn).
+5. Thêm baseline NoThinking (và DEER nếu kịp); thêm MATH500 hoặc SVAMP.
+6. Huấn luyện RLVR (GRPO + LoRA) trên GPU Colab, sau đó chạy 4 kịch bản đối chứng.
+7. Hoàn thiện các chương luận văn.
+================================================================================

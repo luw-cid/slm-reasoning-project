@@ -1,0 +1,206 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[*] 200 câu x 1 phương pháp | Còn 200 lượt chạy (đã có 0).
+[ModelLoader] Đang tải tokenizer từ 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'...
+[ModelLoader] Đang tải trọng số mô hình với torch_dtype=torch.bfloat16, device_map=auto...
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   0%|          | 1/339 [00:00<01:13,  4.63it/s]Loading weights:   1%|          | 2/339 [00:02<07:18,  1.30s/it]Loading weights:   1%|          | 4/339 [00:02<03:05,  1.80it/s]Loading weights:   1%|▏         | 5/339 [00:02<02:20,  2.37it/s]Loading weights:   5%|▍         | 16/339 [00:02<00:26, 12.17it/s]Loading weights:   6%|▌         | 20/339 [00:02<00:23, 13.51it/s]Loading weights:   8%|▊         | 28/339 [00:03<00:15, 20.55it/s]Loading weights:   9%|▉         | 32/339 [00:03<00:15, 19.96it/s]Loading weights:  12%|█▏        | 40/339 [00:03<00:12, 23.32it/s]Loading weights:  13%|█▎        | 44/339 [00:03<00:11, 25.06it/s]Loading weights:  15%|█▌        | 52/339 [00:03<00:10, 27.34it/s]Loading weights:  17%|█▋        | 56/339 [00:04<00:10, 26.80it/s]Loading weights:  19%|█▉        | 64/339 [00:04<00:07, 35.72it/s]Loading weights:  20%|██        | 69/339 [00:04<00:08, 31.03it/s]Loading weights:  22%|██▏       | 76/339 [00:04<00:08, 29.77it/s]Loading weights:  24%|██▎       | 80/339 [00:04<00:08, 30.29it/s]Loading weights:  26%|██▌       | 88/339 [00:04<00:06, 37.18it/s]Loading weights:  27%|██▋       | 93/339 [00:05<00:07, 32.29it/s]Loading weights:  29%|██▉       | 100/339 [00:05<00:06, 37.11it/s]Loading weights:  31%|███       | 105/339 [00:05<00:07, 31.32it/s]Loading weights:  33%|███▎      | 112/339 [00:05<00:07, 30.53it/s]Loading weights:  34%|███▍      | 116/339 [00:05<00:07, 31.67it/s]Loading weights:  37%|███▋      | 124/339 [00:06<00:06, 31.60it/s]Loading weights:  38%|███▊      | 128/339 [00:06<00:06, 31.24it/s]Loading weights:  40%|████      | 136/339 [00:06<00:05, 38.51it/s]Loading weights:  42%|████▏     | 141/339 [00:06<00:06, 31.86it/s]Loading weights:  44%|████▎     | 148/339 [00:06<00:05, 38.03it/s]Loading weights:  45%|████▌     | 153/339 [00:07<00:05, 31.22it/s]Loading weights:  47%|████▋     | 160/339 [00:07<00:04, 36.93it/s]Loading weights:  49%|████▊     | 165/339 [00:07<00:05, 31.92it/s]Loading weights:  50%|█████     | 171/339 [00:07<00:05, 28.95it/s]Loading weights:  52%|█████▏    | 175/339 [00:07<00:05, 30.39it/s]Loading weights:  54%|█████▍    | 184/339 [00:07<00:03, 40.13it/s]Loading weights:  56%|█████▌    | 189/339 [00:08<00:04, 34.39it/s]Loading weights:  58%|█████▊    | 196/339 [00:08<00:04, 32.08it/s]Loading weights:  59%|█████▉    | 200/339 [00:08<00:04, 32.07it/s]Loading weights:  61%|██████▏   | 208/339 [00:08<00:04, 27.54it/s]Loading weights:  65%|██████▍   | 220/339 [00:09<00:03, 30.00it/s]Loading weights:  68%|██████▊   | 231/339 [00:09<00:02, 39.16it/s]Loading weights:  70%|██████▉   | 236/339 [00:09<00:03, 34.19it/s]Loading weights:  72%|███████▏  | 244/339 [00:09<00:02, 38.56it/s]Loading weights:  73%|███████▎  | 249/339 [00:09<00:02, 33.54it/s]Loading weights:  76%|███████▌  | 256/339 [00:10<00:02, 31.34it/s]Loading weights:  77%|███████▋  | 260/339 [00:10<00:02, 31.94it/s]Loading weights:  79%|███████▉  | 268/339 [00:10<00:02, 31.31it/s]Loading weights:  80%|████████  | 272/339 [00:10<00:02, 32.53it/s]Loading weights:  83%|████████▎ | 280/339 [00:10<00:01, 38.37it/s]Loading weights:  84%|████████▍ | 285/339 [00:10<00:01, 31.75it/s]Loading weights:  86%|████████▌ | 292/339 [00:11<00:01, 38.00it/s]Loading weights:  88%|████████▊ | 297/339 [00:11<00:01, 32.36it/s]Loading weights:  90%|████████▉ | 304/339 [00:11<00:01, 30.71it/s]Loading weights:  91%|█████████ | 308/339 [00:11<00:00, 31.15it/s]Loading weights:  93%|█████████▎| 315/339 [00:11<00:00, 29.73it/s]Loading weights:  95%|█████████▍| 322/339 [00:12<00:00, 34.62it/s]Loading weights:  97%|█████████▋| 328/339 [00:12<00:00, 31.34it/s]Loading weights:  98%|█████████▊| 332/339 [00:12<00:00, 30.89it/s]Loading weights: 100%|██████████| 339/339 [00:12<00:00, 27.14it/s]
+[1/200] id=100 standard: SAI | 768 tok (think 768) | ETA 6.01h
+[2/200] id=101 standard: ĐÚNG | 716 tok (think 559) | ETA 5.67h
+[3/200] id=102 standard: SAI | 511 tok (think 174) | ETA 5.03h
+[4/200] id=103 standard: ĐÚNG | 732 tok (think 570) | ETA 5.10h
+[5/200] id=104 standard: ĐÚNG | 768 tok (think 768) | ETA 5.19h
+[6/200] id=105 standard: ĐÚNG | 745 tok (think 637) | ETA 5.19h
+[7/200] id=106 standard: ĐÚNG | 768 tok (think 768) | ETA 5.21h
+[8/200] id=107 standard: SAI | 768 tok (think 716) | ETA 5.22h
+[9/200] id=108 standard: ĐÚNG | 644 tok (think 467) | ETA 5.13h
+[10/200] id=109 standard: SAI | 363 tok (think 162) | ETA 4.85h
+[11/200] id=110 standard: ĐÚNG | 712 tok (think 529) | ETA 4.84h
+[12/200] id=111 standard: SAI | 768 tok (think 768) | ETA 4.86h
+[13/200] id=112 standard: ĐÚNG | 612 tok (think 444) | ETA 4.79h
+[14/200] id=113 standard: ĐÚNG | 299 tok (think 104) | ETA 4.57h
+[15/200] id=114 standard: SAI | 768 tok (think 768) | ETA 4.60h
+[16/200] id=115 standard: SAI | 768 tok (think 768) | ETA 4.61h
+[17/200] id=116 standard: SAI | 768 tok (think 768) | ETA 4.62h
+[18/200] id=117 standard: ĐÚNG | 241 tok (think 105) | ETA 4.43h
+[19/200] id=118 standard: ĐÚNG | 374 tok (think 139) | ETA 4.31h
+[20/200] id=119 standard: SAI | 768 tok (think 768) | ETA 4.32h
+[21/200] id=120 standard: ĐÚNG | 291 tok (think 79) | ETA 4.19h
+[22/200] id=121 standard: ĐÚNG | 374 tok (think 163) | ETA 4.09h
+[23/200] id=122 standard: SAI | 768 tok (think 768) | ETA 4.11h
+[24/200] id=123 standard: SAI | 768 tok (think 731) | ETA 4.13h
+[25/200] id=124 standard: SAI | 768 tok (think 768) | ETA 4.14h
+[26/200] id=125 standard: SAI | 768 tok (think 768) | ETA 4.15h
+[27/200] id=126 standard: ĐÚNG | 768 tok (think 768) | ETA 4.16h
+[28/200] id=127 standard: ĐÚNG | 256 tok (think 92) | ETA 4.05h
+[29/200] id=128 standard: SAI | 768 tok (think 768) | ETA 4.05h
+[30/200] id=129 standard: SAI | 751 tok (think 277) | ETA 4.05h
+[31/200] id=130 standard: ĐÚNG | 599 tok (think 449) | ETA 4.02h
+[32/200] id=131 standard: ĐÚNG | 236 tok (think 78) | ETA 3.92h
+[33/200] id=132 standard: SAI | 768 tok (think 563) | ETA 3.92h
+[34/200] id=133 standard: SAI | 768 tok (think 682) | ETA 3.92h
+[35/200] id=134 standard: ĐÚNG | 325 tok (think 131) | ETA 3.85h
+[36/200] id=135 standard: ĐÚNG | 528 tok (think 404) | ETA 3.81h
+[37/200] id=136 standard: ĐÚNG | 290 tok (think 129) | ETA 3.73h
+[38/200] id=137 standard: ĐÚNG | 559 tok (think 156) | ETA 3.70h
+[39/200] id=138 standard: ĐÚNG | 768 tok (think 768) | ETA 3.70h
+[40/200] id=139 standard: SAI | 768 tok (think 768) | ETA 3.70h
+[41/200] id=140 standard: ĐÚNG | 463 tok (think 143) | ETA 3.66h
+[42/200] id=141 standard: SAI | 768 tok (think 768) | ETA 3.66h
+[43/200] id=142 standard: ĐÚNG | 318 tok (think 121) | ETA 3.59h
+[44/200] id=143 standard: SAI | 768 tok (think 768) | ETA 3.59h
+[45/200] id=144 standard: SAI | 689 tok (think 301) | ETA 3.58h
+[46/200] id=145 standard: ĐÚNG | 390 tok (think 134) | ETA 3.52h
+[47/200] id=146 standard: ĐÚNG | 698 tok (think 554) | ETA 3.51h
+[48/200] id=147 standard: SAI | 768 tok (think 768) | ETA 3.51h
+[49/200] id=148 standard: SAI | 768 tok (think 768) | ETA 3.50h
+[50/200] id=149 standard: ĐÚNG | 768 tok (think 768) | ETA 3.49h
+[51/200] id=150 standard: SAI | 768 tok (think 768) | ETA 3.49h
+[52/200] id=151 standard: SAI | 768 tok (think 606) | ETA 3.48h
+[53/200] id=152 standard: ĐÚNG | 684 tok (think 528) | ETA 3.46h
+[54/200] id=153 standard: SAI | 768 tok (think 768) | ETA 3.45h
+[55/200] id=154 standard: SAI | 768 tok (think 753) | ETA 3.44h
+[56/200] id=155 standard: SAI | 768 tok (think 768) | ETA 3.43h
+[57/200] id=156 standard: SAI | 671 tok (think 289) | ETA 3.41h
+[58/200] id=157 standard: ĐÚNG | 768 tok (think 768) | ETA 3.40h
+[59/200] id=158 standard: ĐÚNG | 751 tok (think 563) | ETA 3.38h
+[60/200] id=159 standard: ĐÚNG | 295 tok (think 111) | ETA 3.33h
+[61/200] id=160 standard: ĐÚNG | 768 tok (think 768) | ETA 3.31h
+[62/200] id=161 standard: ĐÚNG | 374 tok (think 186) | ETA 3.27h
+[63/200] id=162 standard: SAI | 768 tok (think 768) | ETA 3.26h
+[64/200] id=163 standard: SAI | 768 tok (think 768) | ETA 3.24h
+[65/200] id=164 standard: ĐÚNG | 745 tok (think 598) | ETA 3.23h
+[66/200] id=165 standard: SAI | 291 tok (think 76) | ETA 3.18h
+[67/200] id=166 standard: ĐÚNG | 358 tok (think 146) | ETA 3.13h
+[68/200] id=167 standard: ĐÚNG | 753 tok (think 508) | ETA 3.12h
+[69/200] id=168 standard: ĐÚNG | 251 tok (think 107) | ETA 3.07h
+[70/200] id=169 standard: ĐÚNG | 613 tok (think 496) | ETA 3.04h
+[71/200] id=170 standard: ĐÚNG | 768 tok (think 604) | ETA 3.03h
+[72/200] id=171 standard: SAI | 768 tok (think 768) | ETA 3.01h
+[73/200] id=172 standard: SAI | 768 tok (think 768) | ETA 3.00h
+[74/200] id=173 standard: ĐÚNG | 465 tok (think 177) | ETA 2.97h
+[75/200] id=174 standard: ĐÚNG | 490 tok (think 224) | ETA 2.93h
+[76/200] id=175 standard: ĐÚNG | 768 tok (think 569) | ETA 2.92h
+[77/200] id=176 standard: SAI | 768 tok (think 63) | ETA 2.90h
+[78/200] id=177 standard: SAI | 768 tok (think 297) | ETA 2.89h
+[79/200] id=178 standard: ĐÚNG | 424 tok (think 147) | ETA 2.85h
+[80/200] id=179 standard: ĐÚNG | 726 tok (think 565) | ETA 2.83h
+[81/200] id=180 standard: ĐÚNG | 276 tok (think 115) | ETA 2.79h
+[82/200] id=181 standard: ĐÚNG | 337 tok (think 129) | ETA 2.75h
+[83/200] id=182 standard: SAI | 768 tok (think 768) | ETA 2.73h
+[84/200] id=183 standard: SAI | 768 tok (think 768) | ETA 2.72h
+[85/200] id=184 standard: SAI | 768 tok (think 768) | ETA 2.70h
+[86/200] id=185 standard: ĐÚNG | 260 tok (think 105) | ETA 2.66h
+[87/200] id=186 standard: SAI | 768 tok (think 768) | ETA 2.64h
+[88/200] id=187 standard: SAI | 768 tok (think 768) | ETA 2.63h
+[89/200] id=188 standard: ĐÚNG | 561 tok (think 242) | ETA 2.60h
+[90/200] id=189 standard: SAI | 768 tok (think 768) | ETA 2.58h
+[91/200] id=190 standard: ĐÚNG | 261 tok (think 122) | ETA 2.54h
+[92/200] id=191 standard: ĐÚNG | 276 tok (think 113) | ETA 2.51h
+[93/200] id=192 standard: ĐÚNG | 392 tok (think 113) | ETA 2.47h
+[94/200] id=193 standard: ĐÚNG | 467 tok (think 149) | ETA 2.44h
+[95/200] id=194 standard: ĐÚNG | 321 tok (think 130) | ETA 2.41h
+[96/200] id=195 standard: ĐÚNG | 768 tok (think 768) | ETA 2.39h
+[97/200] id=196 standard: SAI | 768 tok (think 685) | ETA 2.37h
+[98/200] id=197 standard: SAI | 768 tok (think 768) | ETA 2.36h
+[99/200] id=198 standard: ĐÚNG | 557 tok (think 225) | ETA 2.33h
+[100/200] id=199 standard: ĐÚNG | 556 tok (think 194) | ETA 2.31h
+[101/200] id=200 standard: ĐÚNG | 768 tok (think 586) | ETA 2.29h
+[102/200] id=201 standard: SAI | 768 tok (think 768) | ETA 2.27h
+[103/200] id=202 standard: ĐÚNG | 512 tok (think 346) | ETA 2.24h
+[104/200] id=203 standard: ĐÚNG | 746 tok (think 530) | ETA 2.22h
+[105/200] id=204 standard: ĐÚNG | 507 tok (think 176) | ETA 2.20h
+[106/200] id=205 standard: SAI | 768 tok (think 768) | ETA 2.18h
+[107/200] id=206 standard: ĐÚNG | 768 tok (think 768) | ETA 2.16h
+[108/200] id=207 standard: ĐÚNG | 768 tok (think 768) | ETA 2.14h
+[109/200] id=208 standard: SAI | 768 tok (think 686) | ETA 2.12h
+[110/200] id=209 standard: SAI | 768 tok (think 768) | ETA 2.10h
+[111/200] id=210 standard: SAI | 768 tok (think 739) | ETA 2.08h
+[112/200] id=211 standard: ĐÚNG | 768 tok (think 768) | ETA 2.06h
+[113/200] id=212 standard: ĐÚNG | 418 tok (think 150) | ETA 2.03h
+[114/200] id=213 standard: ĐÚNG | 596 tok (think 416) | ETA 2.01h
+[115/200] id=214 standard: SAI | 768 tok (think 768) | ETA 1.99h
+[116/200] id=215 standard: ĐÚNG | 371 tok (think 148) | ETA 1.96h
+[117/200] id=216 standard: SAI | 768 tok (think 768) | ETA 1.94h
+[118/200] id=217 standard: ĐÚNG | 240 tok (think 93) | ETA 1.91h
+[119/200] id=218 standard: SAI | 658 tok (think 195) | ETA 1.88h
+[120/200] id=219 standard: SAI | 768 tok (think 768) | ETA 1.86h
+[121/200] id=220 standard: SAI | 768 tok (think 617) | ETA 1.84h
+[122/200] id=221 standard: ĐÚNG | 768 tok (think 768) | ETA 1.82h
+[123/200] id=222 standard: SAI | 768 tok (think 730) | ETA 1.80h
+[124/200] id=223 standard: ĐÚNG | 300 tok (think 113) | ETA 1.77h
+[125/200] id=224 standard: SAI | 768 tok (think 768) | ETA 1.75h
+[126/200] id=225 standard: ĐÚNG | 291 tok (think 112) | ETA 1.72h
+[127/200] id=226 standard: ĐÚNG | 532 tok (think 222) | ETA 1.70h
+[128/200] id=227 standard: SAI | 500 tok (think 226) | ETA 1.67h
+[129/200] id=228 standard: ĐÚNG | 609 tok (think 463) | ETA 1.65h
+[130/200] id=229 standard: ĐÚNG | 768 tok (think 768) | ETA 1.63h
+[131/200] id=230 standard: SAI | 768 tok (think 768) | ETA 1.61h
+[132/200] id=231 standard: ĐÚNG | 258 tok (think 99) | ETA 1.58h
+[133/200] id=232 standard: ĐÚNG | 337 tok (think 120) | ETA 1.55h
+[134/200] id=233 standard: ĐÚNG | 337 tok (think 143) | ETA 1.52h
+[135/200] id=234 standard: SAI | 768 tok (think 768) | ETA 1.50h
+[136/200] id=235 standard: ĐÚNG | 600 tok (think 455) | ETA 1.48h
+[137/200] id=236 standard: SAI | 768 tok (think 768) | ETA 1.46h
+[138/200] id=237 standard: ĐÚNG | 635 tok (think 541) | ETA 1.43h
+[139/200] id=238 standard: ĐÚNG | 728 tok (think 555) | ETA 1.41h
+[140/200] id=239 standard: SAI | 768 tok (think 768) | ETA 1.39h
+[141/200] id=240 standard: SAI | 768 tok (think 683) | ETA 1.37h
+[142/200] id=241 standard: SAI | 238 tok (think 80) | ETA 1.34h
+[143/200] id=242 standard: SAI | 484 tok (think 187) | ETA 1.32h
+[144/200] id=243 standard: SAI | 768 tok (think 726) | ETA 1.29h
+[145/200] id=244 standard: SAI | 768 tok (think 768) | ETA 1.27h
+[146/200] id=245 standard: SAI | 378 tok (think 142) | ETA 1.25h
+[147/200] id=246 standard: SAI | 539 tok (think 211) | ETA 1.22h
+[148/200] id=247 standard: SAI | 768 tok (think 693) | ETA 1.20h
+[149/200] id=248 standard: ĐÚNG | 261 tok (think 119) | ETA 1.17h
+[150/200] id=249 standard: SAI | 768 tok (think 768) | ETA 1.15h
+[151/200] id=250 standard: ĐÚNG | 768 tok (think 768) | ETA 1.13h
+[152/200] id=251 standard: ĐÚNG | 231 tok (think 90) | ETA 1.10h
+[153/200] id=252 standard: ĐÚNG | 768 tok (think 768) | ETA 1.08h
+[154/200] id=253 standard: SAI | 768 tok (think 768) | ETA 1.06h
+[155/200] id=254 standard: ĐÚNG | 768 tok (think 768) | ETA 1.04h
+[156/200] id=255 standard: SAI | 768 tok (think 768) | ETA 1.02h
+[157/200] id=256 standard: SAI | 768 tok (think 768) | ETA 1.00h
+[158/200] id=257 standard: ĐÚNG | 768 tok (think 768) | ETA 0.97h
+[159/200] id=258 standard: SAI | 315 tok (think 145) | ETA 0.95h
+[160/200] id=259 standard: SAI | 434 tok (think 145) | ETA 0.92h
+[161/200] id=260 standard: SAI | 768 tok (think 768) | ETA 0.90h
+[162/200] id=261 standard: ĐÚNG | 351 tok (think 122) | ETA 0.88h
+[163/200] id=262 standard: ĐÚNG | 254 tok (think 108) | ETA 0.85h
+[164/200] id=263 standard: ĐÚNG | 727 tok (think 581) | ETA 0.83h
+[165/200] id=264 standard: ĐÚNG | 378 tok (think 159) | ETA 0.80h
+[166/200] id=265 standard: SAI | 542 tok (think 274) | ETA 0.78h
+[167/200] id=266 standard: SAI | 768 tok (think 768) | ETA 0.76h
+[168/200] id=267 standard: SAI | 768 tok (think 768) | ETA 0.74h
+[169/200] id=268 standard: ĐÚNG | 389 tok (think 139) | ETA 0.71h
+[170/200] id=269 standard: SAI | 768 tok (think 692) | ETA 0.69h
+[171/200] id=270 standard: SAI | 768 tok (think 768) | ETA 0.67h
+[172/200] id=271 standard: SAI | 768 tok (think 768) | ETA 0.65h
+[173/200] id=272 standard: SAI | 327 tok (think 124) | ETA 0.62h
+[174/200] id=273 standard: ĐÚNG | 586 tok (think 194) | ETA 0.60h
+[175/200] id=274 standard: ĐÚNG | 745 tok (think 571) | ETA 0.57h
+[176/200] id=275 standard: SAI | 768 tok (think 565) | ETA 0.55h
+[177/200] id=276 standard: ĐÚNG | 768 tok (think 768) | ETA 0.53h
+[178/200] id=277 standard: SAI | 768 tok (think 768) | ETA 0.51h
+[179/200] id=278 standard: ĐÚNG | 365 tok (think 181) | ETA 0.48h
+[180/200] id=279 standard: ĐÚNG | 569 tok (think 227) | ETA 0.46h
+[181/200] id=280 standard: SAI | 768 tok (think 768) | ETA 0.43h
+[182/200] id=281 standard: ĐÚNG | 768 tok (think 768) | ETA 0.41h
+[183/200] id=282 standard: SAI | 768 tok (think 742) | ETA 0.39h
+[184/200] id=283 standard: ĐÚNG | 735 tok (think 499) | ETA 0.36h
+[185/200] id=284 standard: SAI | 768 tok (think 768) | ETA 0.34h
+[186/200] id=285 standard: ĐÚNG | 279 tok (think 78) | ETA 0.32h
+[187/200] id=286 standard: ĐÚNG | 423 tok (think 183) | ETA 0.29h
+[188/200] id=287 standard: SAI | 768 tok (think 768) | ETA 0.27h
+[189/200] id=288 standard: ĐÚNG | 332 tok (think 161) | ETA 0.25h
+[190/200] id=289 standard: ĐÚNG | 768 tok (think 768) | ETA 0.22h
+[191/200] id=290 standard: SAI | 768 tok (think 625) | ETA 0.20h
+[192/200] id=291 standard: SAI | 768 tok (think 752) | ETA 0.18h
+[193/200] id=292 standard: SAI | 386 tok (think 130) | ETA 0.15h
+[194/200] id=293 standard: SAI | 768 tok (think 768) | ETA 0.13h
+[195/200] id=294 standard: ĐÚNG | 521 tok (think 397) | ETA 0.11h
+[196/200] id=295 standard: ĐÚNG | 460 tok (think 178) | ETA 0.09h
+[197/200] id=296 standard: ĐÚNG | 768 tok (think 768) | ETA 0.07h
+[198/200] id=297 standard: ĐÚNG | 768 tok (think 600) | ETA 0.04h
+[199/200] id=298 standard: SAI | 355 tok (think 122) | ETA 0.02h
+[200/200] id=299 standard: SAI | 647 tok (think 261) | ETA 0.00h

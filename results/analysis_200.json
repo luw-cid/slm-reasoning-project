@@ -1,0 +1,118 @@
+{
+  "setup": {
+    "min_id": 100,
+    "max_new_tokens": 768,
+    "n_common": 200,
+    "id_range": [
+      100,
+      299
+    ],
+    "reference": "standard"
+  },
+  "methods": {
+    "hardtrunc_N130": {
+      "n": 200,
+      "correct": 144,
+      "accuracy_pct": 72.0,
+      "acc_ci95_pct": [
+        65.41,
+        77.76
+      ],
+      "avg_total_tokens": 551.0,
+      "avg_think_tokens": 126.2,
+      "exhausted_pct": 27.5,
+      "brake_rate_pct": 85.0,
+      "raw_early_exit_flag_pct": 85.0
+    },
+    "random": {
+      "n": 200,
+      "correct": 137,
+      "accuracy_pct": 68.5,
+      "acc_ci95_pct": [
+        61.76,
+        74.54
+      ],
+      "avg_total_tokens": 552.1,
+      "avg_think_tokens": 126.8,
+      "exhausted_pct": 26.0,
+      "brake_rate_pct": 85.0,
+      "raw_early_exit_flag_pct": 85.0
+    },
+    "rpdi_W16_l1.5": {
+      "n": 200,
+      "correct": 143,
+      "accuracy_pct": 71.5,
+      "acc_ci95_pct": [
+        64.88,
+        77.31
+      ],
+      "avg_total_tokens": 564.8,
+      "avg_think_tokens": 133.1,
+      "exhausted_pct": 27.0,
+      "brake_rate_pct": 70.5,
+      "raw_early_exit_flag_pct": 70.5
+    },
+    "standard": {
+      "n": 200,
+      "correct": 105,
+      "accuracy_pct": 52.5,
+      "acc_ci95_pct": [
+        45.6,
+        59.31
+      ],
+      "avg_total_tokens": 619.3,
+      "avg_think_tokens": 492.2,
+      "exhausted_pct": 50.5,
+      "brake_rate_pct": 0.0,
+      "raw_early_exit_flag_pct": 0.0
+    }
+  },
+  "paired_vs_reference": {
+    "hardtrunc_N130": {
+      "method_better": 48,
+      "reference_better": 9,
+      "delta_pct": 19.5,
+      "delta_ci95_pct": [
+        12.61,
+        26.39
+      ],
+      "mcnemar_exact_p": 1.520195229143262e-07
+    },
+    "random": {
+      "method_better": 40,
+      "reference_better": 8,
+      "delta_pct": 16.0,
+      "delta_ci95_pct": [
+        9.58,
+        22.42
+      ],
+      "mcnemar_exact_p": 3.305266709219268e-06
+    },
+    "rpdi_W16_l1.5": {
+      "method_better": 43,
+      "reference_better": 5,
+      "delta_pct": 19.0,
+      "delta_ci95_pct": [
+        12.74,
+        25.26
+      ],
+      "mcnemar_exact_p": 1.3680484300948592e-08
+    }
+  },
+  "by_baseline_exhaustion": {
+    "baseline_finished": {
+      "n": 99,
+      "hardtrunc_N130": 81.82,
+      "random": 78.79,
+      "rpdi_W16_l1.5": 82.83,
+      "standard": 80.81
+    },
+    "baseline_exhausted": {
+      "n": 101,
+      "hardtrunc_N130": 62.38,
+      "random": 58.42,
+      "rpdi_W16_l1.5": 60.4,
+      "standard": 24.75
+    }
+  }
+}
