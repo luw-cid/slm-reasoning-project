@@ -123,6 +123,12 @@ def parse_args() -> argparse.Namespace:
         default=25,
         help="Tần suất lưu checkpoint trung gian (mặc định: 25).",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        default=False,
+        help="Chạy tiếp từ checkpoint mới nhất trong output_dir (khi Colab bị ngắt giữa chừng).",
+    )
 
     # Cấu hình LoRA (PEFT)
     parser.add_argument(
@@ -314,6 +320,7 @@ def train_grpo():
         logging_steps=5,
         save_strategy="steps",
         save_steps=args.save_steps,
+        save_total_limit=3,
         bf16=use_bf16,
         fp16=use_fp16,
         report_to="none",
@@ -376,7 +383,13 @@ def train_grpo():
 
     # 8. Bắt đầu tiến trình huấn luyện
     print("\n🚀 [Trainer] BẮT ĐẦU QUÁ TRÌNH HUẤN LUYỆN GRPO...")
-    trainer.train()
+    resume_ckpt = None
+    if args.resume:
+        from transformers.trainer_utils import get_last_checkpoint
+
+        resume_ckpt = get_last_checkpoint(args.output_dir)
+        print(f"[Trainer] Chạy tiếp từ checkpoint: {resume_ckpt or 'không tìm thấy, huấn luyện từ đầu'}")
+    trainer.train(resume_from_checkpoint=resume_ckpt)
 
     # 9. Lưu Adapter và Tokenizer cuối cùng
     print(f"\n[Lưu trữ] Đang lưu trọng số LoRA adapter vào '{args.adapter_dir}'...")
