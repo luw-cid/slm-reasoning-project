@@ -104,6 +104,9 @@ def load_models(base_model_id: str, adapter_dir: str):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from common.peft_compat import disable_incompatible_torchao
+
+    disable_incompatible_torchao()
 
     print(f"[ModelLoader] Đang nạp tokenizer từ '{base_model_id}'...")
     tokenizer = AutoTokenizer.from_pretrained(base_model_id)

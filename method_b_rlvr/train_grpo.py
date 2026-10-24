@@ -233,6 +233,9 @@ def train_grpo():
     import torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
     from peft import LoraConfig, TaskType
+    from common.peft_compat import disable_incompatible_torchao
+
+    disable_incompatible_torchao()
     from trl import GRPOTrainer, GRPOConfig
 
     print("==========================================================================================")
