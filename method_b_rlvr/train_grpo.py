@@ -251,8 +251,15 @@ def train_grpo():
     use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
     use_fp16 = torch.cuda.is_available() and not use_bf16
 
+    import transformers
+
+    # Luôn chỉ định dtype (kể cả khi 4-bit): nếu để mặc định, lm_head/embedding nạp theo config (bf16)
+    # và kernel log-prob của TRL sẽ lỗi trên GPU không hỗ trợ bf16 (T4, compute capability 7.5)
+    compute_dtype = torch.bfloat16 if use_bf16 else torch.float16
+    dtype_key = "dtype" if int(transformers.__version__.split(".")[0]) >= 5 else "torch_dtype"
     model_kwargs = {
         "device_map": "auto" if torch.cuda.is_available() else None,
+        dtype_key: compute_dtype,
     }
 
     if args.use_4bit:
@@ -261,11 +268,9 @@ def train_grpo():
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16 if use_bf16 else torch.float16,
+            bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=True,
         )
-    else:
-        model_kwargs["torch_dtype"] = torch.bfloat16 if use_bf16 else torch.float16
 
     print(f"[ModelLoader] Đang nạp mô hình nền '{args.model_id}'...")
     model = AutoModelForCausalLM.from_pretrained(args.model_id, **model_kwargs)
