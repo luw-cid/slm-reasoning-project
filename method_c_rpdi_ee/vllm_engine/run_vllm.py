@@ -67,14 +67,45 @@ def parse_args(argv=None) -> argparse.Namespace:
     return args
 
 
+class Heartbeat:
+    """In định kỳ số lượt còn đang sinh và độ dài lượt dài nhất.
+
+    Thanh tiến độ của vLLM chỉ nhích khi một lượt sinh XONG; ở cuối mỗi chunk vài lượt dài (tới 16k
+    token) có thể chạy hơn 10 phút mà thanh tiến độ đứng yên. Dòng này cho thấy tiến trình vẫn chạy.
+    """
+
+    def __init__(self, interval: float = 60.0, active_window: float = 5.0, clock=time.time, out=print):
+        self.interval = interval
+        self.active_window = active_window
+        self.clock = clock
+        self.out = out
+        self.last_print = clock()
+        self.lengths: Dict[int, int] = {}
+        self.seen: Dict[int, float] = {}
+
+    def tick(self, key: int, n_tokens: int) -> None:
+        now = self.clock()
+        self.lengths[key] = n_tokens
+        self.seen[key] = now
+        if now - self.last_print >= self.interval:
+            active = [k for k, t in self.seen.items() if now - t <= self.active_window]
+            longest = max((self.lengths[k] for k in active), default=0)
+            self.out(f"[đang sinh] {len(active)} lượt chưa xong, dài nhất {longest} token", flush=True)
+            self.last_print = now
+
+
 class VLLMProcessor:
     """Logits processor theo request cho vLLM V0, chữ ký (prompt_ids, output_ids, logits) -> logits."""
 
-    def __init__(self, monitor):
+    def __init__(self, monitor, heartbeat: Optional[Heartbeat] = None):
         self.monitor = monitor
+        self.heartbeat = heartbeat
 
     def __call__(self, prompt_ids, output_ids, logits):
         import torch
+
+        if self.heartbeat is not None:
+            self.heartbeat.tick(id(self), len(output_ids))
 
         def stats() -> Tuple[float, int]:
             lp = torch.log_softmax(logits.float(), dim=-1)
@@ -215,6 +246,7 @@ def generate(args: argparse.Namespace) -> None:
     )
 
     boundary_cache: Dict[str, frozenset] = {}
+    heartbeat = Heartbeat(interval=60.0)
     order = [s["id"] for s in dataset]
     chunks = [order[i:i + args.chunk_size] for i in range(0, len(order), args.chunk_size)]
     t_start = time.time()
@@ -230,7 +262,7 @@ def generate(args: argparse.Namespace) -> None:
             monitors.append(mon)
             prompts.append({"prompt_token_ids": prompt_ids[s["id"]]})
             params.append(SamplingParams(temperature=0.0, max_tokens=args.max_tokens,
-                                         logits_processors=[VLLMProcessor(mon)], skip_special_tokens=False))
+                                         logits_processors=[VLLMProcessor(mon, heartbeat)], skip_special_tokens=False))
         t0 = time.time()
         outputs = llm.generate(prompts, params, use_tqdm=True)
         seconds = time.time() - t0

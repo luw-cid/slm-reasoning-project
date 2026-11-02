@@ -19,3 +19,23 @@ def test_parse_args_defaults():
         "standard", "rpdi_legacy_W16_l1.5", "rpdi_W512_l2.0_wait", "rpdi_W512_l2.0_newline"]
     assert args.budget_list[0] == 512 and args.budget_list[-1] == 16384 and 768 in args.budget_list
     assert (args.start, args.end, args.max_tokens) == (100, 300, 16384)
+
+
+def test_heartbeat_reports_active_runs_and_longest():
+    from method_c_rpdi_ee.vllm_engine.run_vllm import Heartbeat
+
+    now = {"t": 0.0}
+    lines = []
+    hb = Heartbeat(interval=60.0, active_window=5.0, clock=lambda: now["t"],
+                   out=lambda msg, flush=False: lines.append(msg))
+    hb.tick(1, 100)
+    hb.tick(2, 50)
+    assert lines == []                 # chưa đủ 60 giây
+    now["t"] = 30.0
+    hb.tick(2, 4000)                   # lượt 1 đã xong (không còn được gọi)
+    now["t"] = 61.0
+    hb.tick(3, 9000)
+    assert lines == ["[đang sinh] 1 lượt chưa xong, dài nhất 9000 token"]
+    now["t"] = 62.0
+    hb.tick(3, 9001)
+    assert len(lines) == 1             # chưa tới kỳ in tiếp theo
