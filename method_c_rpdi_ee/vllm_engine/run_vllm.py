@@ -22,7 +22,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 if sys.platform == "win32":
     try:
@@ -111,6 +111,18 @@ def load_tokenizer(model_id: str):
     return AutoTokenizer.from_pretrained(model_id)
 
 
+def gpu_memory_problem(free_bytes: int, total_bytes: int, utilization: float) -> Optional[str]:
+    """Thông báo lỗi nếu GPU không còn đủ bộ nhớ trống cho vLLM (thường do một lần chạy khác còn chạy nền)."""
+    need = utilization * total_bytes
+    if free_bytes >= need:
+        return None
+    gib = 1024 ** 3
+    return (f"GPU chỉ còn trống {free_bytes / gib:.1f}/{total_bytes / gib:.1f} GiB, nhưng vLLM cần "
+            f"{need / gib:.1f} GiB (--gpu_memory_utilization {utilization}). Có thể một lần chạy run_vllm.py "
+            "khác vẫn đang chạy nền trên GPU này: kiểm tra bằng `!ps aux | grep run_vllm` và `!nvidia-smi`, "
+            "đợi nó chạy xong hoặc dừng nó (`!pkill -f run_vllm.py`) rồi chạy lại.")
+
+
 def think_close_id_of(tokenizer) -> int:
     ids = tokenizer.encode("</think>", add_special_tokens=False)
     if len(ids) != 1:
@@ -157,6 +169,11 @@ def generate(args: argparse.Namespace) -> None:
     import transformers
     import vllm
     from vllm import LLM, SamplingParams
+
+    if torch.cuda.is_available():
+        problem = gpu_memory_problem(*torch.cuda.mem_get_info(), args.gpu_memory_utilization)
+        if problem:
+            raise SystemExit(problem)
 
     tokenizer = load_tokenizer(args.model_id)
     close_id = think_close_id_of(tokenizer)
