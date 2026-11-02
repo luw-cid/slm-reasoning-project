@@ -6,10 +6,10 @@ Phương pháp (--methods, phân tách bằng dấu phẩy):
     rpdi:W:lambda[:B]         RPDI-EE đúng Algorithm 1 của bài gốc; B = wait (mặc định) | newline | punct.
     rpdi_legacy:W:lambda      Bản sao chính xác RPDILogitsProcessor (HF) đã dùng cho kết quả 768 token.
 
-File ghi vào --output_dir:
+File ghi vào --output_dir (mỗi lượt được ghi ngay khi sinh xong, kèm một dòng log):
     raw.jsonl       mỗi dòng = 1 câu x 1 phương pháp: output_ids, vị trí </think>, entropy pha suy nghĩ
     budgets.jsonl   mỗi dòng = 1 câu x 1 phương pháp x 1 ngân sách, cùng khóa với run_controls.py
-    run_info.json   phiên bản thư viện, GPU, tham số, thời gian từng chunk
+    run_info.json   phiên bản thư viện, GPU, tham số, tiến độ
 Chạy lại cùng lệnh sẽ bỏ qua các cặp (câu, phương pháp) đã có trong raw.jsonl.
 
 Ví dụ (Colab T4):
@@ -54,7 +54,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--methods", type=str, default=DEFAULT_METHODS)
     p.add_argument("--max_tokens", type=int, default=16384, help="Ngân sách sinh lớn nhất (tổng token suy nghĩ + trả lời).")
     p.add_argument("--budgets", type=str, default=DEFAULT_BUDGETS, help="Các ngân sách suy ra bằng cách cắt chuỗi.")
-    p.add_argument("--chunk_size", type=int, default=50, help="Số câu mỗi lần gọi generate (ghi file sau mỗi chunk).")
+    p.add_argument("--chunk_size", type=int, default=None,
+                   help="Không còn dùng (giữ để lệnh cũ không lỗi): mỗi lượt được ghi file ngay khi sinh xong.")
     p.add_argument("--dtype", type=str, default="float16", help="T4 không hỗ trợ bfloat16.")
     p.add_argument("--gpu_memory_utilization", type=float, default=0.90)
     p.add_argument("--max_num_seqs", type=int, default=128)
@@ -161,6 +162,49 @@ def think_close_id_of(tokenizer) -> int:
     return ids[0]
 
 
+def build_raw(sample: Dict[str, Any], method: str, max_tokens: int, prompt_ids: List[int], token_ids: List[int],
+              finish_reason: Optional[str], stop_reason: Any, monitor, close_id: int, eos_id: Optional[int]) -> Dict[str, Any]:
+    """Bản ghi raw.jsonl cho một lượt (câu x phương pháp) đã sinh xong."""
+    ids = list(token_ids)
+    # HF tính cả token EOS vào số token sinh; bảo đảm vLLM cũng vậy
+    if finish_reason == "stop" and stop_reason is None and eos_id is not None and (not ids or ids[-1] != eos_id):
+        ids.append(eos_id)
+    return {
+        "sample_id": sample["id"],
+        "method": method,
+        "max_tokens": max_tokens,
+        "ground_truth": sample["ground_truth"],
+        "prompt_ids": list(prompt_ids),
+        "output_ids": ids,
+        "close_index": ids.index(close_id) if close_id in ids else None,
+        "forced_close": monitor.early_exited,
+        "exit_step": monitor.exit_step,
+        "rpdi_at_exit": monitor.rpdi_at_exit,
+        "finish_reason": finish_reason,
+        "entropies": [round(h, 4) for h in monitor.entropies],
+    }
+
+
+def format_done_line(k: int, total: int, raw: Dict[str, Any], recs: List[Dict[str, Any]], elapsed_s: float) -> str:
+    """Một dòng log khi một lượt sinh xong, vd:
+    [  12/800] id=102 rpdi_legacy_W16_l1.5    |    604 token, phanh ở token 131 | @768: ĐÚNG | @16384: ĐÚNG | 3.2 phút
+    """
+    n = len(raw["output_ids"])
+    if raw["forced_close"]:
+        status = f"phanh ở token {raw['exit_step']}"
+    elif raw["close_index"] is not None:
+        status = f"tự đóng </think> ở token {raw['close_index']}"
+    else:
+        status = "không đóng </think>"
+    if raw.get("finish_reason") == "length":
+        status += ", chạm trần"
+    mark = lambda r: "ĐÚNG" if r["is_correct"] else "sai"  # noqa: E731
+    parts = [f"[{k:>4}/{total}] id={raw['sample_id']} {raw['method']:<24}", f"{n:>6} token, {status}"]
+    parts += [f"@{r['max_new_tokens']}: {mark(r)}" for r in recs if r["max_new_tokens"] in (768, raw["max_tokens"])]
+    parts.append(f"{elapsed_s / 60:.1f} phút")
+    return " | ".join(parts)
+
+
 def expand_only(args: argparse.Namespace) -> None:
     raw_path = os.path.join(args.output_dir, "raw.jsonl")
     raws = read_jsonl(raw_path)
@@ -224,7 +268,7 @@ def generate(args: argparse.Namespace) -> None:
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "max_model_len": max_model_len,
         "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "chunks": [],
+        "progress": {},
     }
     if os.path.exists(info_path):
         with open(info_path, "r", encoding="utf-8") as f:
@@ -245,68 +289,49 @@ def generate(args: argparse.Namespace) -> None:
         seed=0,
     )
 
+    # Đưa toàn bộ lượt vào engine (theo thứ tự câu, mỗi câu đủ các phương pháp) rồi tự chạy từng bước:
+    # lượt nào xong được ghi file và in log NGAY, không phải chờ cả đợt như LLM.generate.
+    engine = llm.llm_engine
     boundary_cache: Dict[str, frozenset] = {}
     heartbeat = Heartbeat(interval=60.0)
-    order = [s["id"] for s in dataset]
-    chunks = [order[i:i + args.chunk_size] for i in range(0, len(order), args.chunk_size)]
+    pending: Dict[str, Tuple[Dict[str, Any], MethodSpec, Any]] = {}
+    for n, (s, spec) in enumerate(todo):
+        mon = monitor_for(spec, tokenizer, boundary_cache)
+        params = SamplingParams(temperature=0.0, max_tokens=args.max_tokens,
+                                logits_processors=[VLLMProcessor(mon, heartbeat)], skip_special_tokens=False)
+        engine.add_request(str(n), {"prompt_token_ids": prompt_ids[s["id"]]}, params)
+        pending[str(n)] = (s, spec, mon)
+
+    total_done = len(done) + len(todo)
     t_start = time.time()
-    n_done = 0
-    for chunk_no, chunk_ids in enumerate(chunks, 1):
-        chunk_set = set(chunk_ids)
-        items = [(s, spec) for s, spec in todo if s["id"] in chunk_set]
-        if not items:
-            continue
-        monitors, prompts, params = [], [], []
-        for s, spec in items:
-            mon = monitor_for(spec, tokenizer, boundary_cache)
-            monitors.append(mon)
-            prompts.append({"prompt_token_ids": prompt_ids[s["id"]]})
-            params.append(SamplingParams(temperature=0.0, max_tokens=args.max_tokens,
-                                         logits_processors=[VLLMProcessor(mon, heartbeat)], skip_special_tokens=False))
-        t0 = time.time()
-        outputs = llm.generate(prompts, params, use_tqdm=True)
-        seconds = time.time() - t0
-
-        n_tokens = 0
-        with open(raw_path, "a", encoding="utf-8") as fraw, open(budgets_path, "a", encoding="utf-8") as fbud:
-            for (s, spec), mon, out in zip(items, monitors, outputs):
+    n_done, n_tokens = 0, 0
+    print(f"[*] Bắt đầu sinh {len(todo)} lượt (tối đa {args.max_num_seqs} lượt chạy song song).", flush=True)
+    with open(raw_path, "a", encoding="utf-8") as fraw, open(budgets_path, "a", encoding="utf-8") as fbud:
+        while engine.has_unfinished_requests():
+            for out in engine.step():
+                if not out.finished:
+                    continue
+                s, spec, mon = pending.pop(out.request_id)
                 comp = out.outputs[0]
-                ids = list(comp.token_ids)
-                # HF tính cả token EOS vào số token sinh; bảo đảm vLLM cũng vậy
-                if comp.finish_reason == "stop" and comp.stop_reason is None and eos_id is not None \
-                        and (not ids or ids[-1] != eos_id):
-                    ids.append(eos_id)
-                n_tokens += len(ids)
-                raw = {
-                    "sample_id": s["id"],
-                    "method": spec.key,
-                    "max_tokens": args.max_tokens,
-                    "ground_truth": s["ground_truth"],
-                    "prompt_ids": prompt_ids[s["id"]],
-                    "output_ids": ids,
-                    "close_index": ids.index(close_id) if close_id in ids else None,
-                    "forced_close": mon.early_exited,
-                    "exit_step": mon.exit_step,
-                    "rpdi_at_exit": mon.rpdi_at_exit,
-                    "finish_reason": comp.finish_reason,
-                    "entropies": [round(h, 4) for h in mon.entropies],
-                    "chunk_seconds": round(seconds, 1),
-                }
+                raw = build_raw(s, spec.key, args.max_tokens, prompt_ids[s["id"]], list(comp.token_ids),
+                                comp.finish_reason, comp.stop_reason, mon, close_id, eos_id)
+                recs = expand_to_budgets(raw, decode, close_id, args.budget_list)
                 fraw.write(json.dumps(raw, ensure_ascii=False) + "\n")
-                for rec in expand_to_budgets(raw, decode, close_id, args.budget_list):
+                for rec in recs:
                     fbud.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                fraw.flush()
+                fbud.flush()
 
-        n_done += len(items)
-        info["chunks"].append({"chunk": chunk_no, "requests": len(items), "seconds": round(seconds, 1),
-                               "generated_tokens": n_tokens})
-        info["elapsed_seconds"] = round(time.time() - t_start, 1)
-        write_json(info_path, info)
-        elapsed = time.time() - t_start
-        eta_h = elapsed / n_done * (len(todo) - n_done) / 3600
-        print(f"[chunk {chunk_no}/{len(chunks)}] {len(items)} lượt, {n_tokens} token, {seconds:.0f}s "
-              f"({n_tokens / max(seconds, 1e-9):.0f} tok/s) | xong {n_done}/{len(todo)} | ETA {eta_h:.2f}h", flush=True)
+                n_done += 1
+                n_tokens += len(raw["output_ids"])
+                elapsed = time.time() - t_start
+                print(format_done_line(len(done) + n_done, total_done, raw, recs, elapsed), flush=True)
+                if n_done % 25 == 0 or not pending:
+                    info["progress"] = {"done": len(done) + n_done, "total": total_done,
+                                        "elapsed_seconds": round(elapsed, 1), "generated_tokens": n_tokens}
+                    write_json(info_path, info)
 
-    print(f"[*] Hoàn tất. Kết quả: {raw_path} | {budgets_path}")
+    print(f"[*] Hoàn tất. Kết quả: {raw_path} | {budgets_path}", flush=True)
 
 
 def main(argv=None) -> None:

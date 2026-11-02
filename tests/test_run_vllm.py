@@ -39,3 +39,37 @@ def test_heartbeat_reports_active_runs_and_longest():
     now["t"] = 62.0
     hb.tick(3, 9001)
     assert len(lines) == 1             # chưa tới kỳ in tiếp theo
+
+
+class _Mon:
+    def __init__(self, exited=False, exit_step=-1):
+        self.early_exited, self.exit_step, self.rpdi_at_exit = exited, exit_step, 2.5 if exited else 0.0
+        self.entropies = [0.123456, 1.0]
+
+
+def test_build_raw_appends_eos_and_finds_close():
+    from method_c_rpdi_ee.vllm_engine.run_vllm import build_raw
+
+    s = {"id": 102, "ground_truth": "7"}
+    raw = build_raw(s, "standard", 16384, [1, 2], [5, 9, 6], "stop", None, _Mon(), close_id=9, eos_id=0)
+    assert raw["output_ids"] == [5, 9, 6, 0] and raw["close_index"] == 1
+    assert raw["entropies"] == [0.1235, 1.0] and raw["forced_close"] is False
+    raw2 = build_raw(s, "standard", 16384, [1, 2], [5, 6], "length", None, _Mon(), close_id=9, eos_id=0)
+    assert raw2["output_ids"] == [5, 6] and raw2["close_index"] is None
+
+
+def test_format_done_line():
+    from method_c_rpdi_ee.vllm_engine.run_vllm import format_done_line
+
+    raw = {"sample_id": 102, "method": "rpdi_legacy_W16_l1.5", "max_tokens": 16384, "output_ids": [0] * 604,
+           "forced_close": True, "exit_step": 131, "close_index": 131, "finish_reason": "stop"}
+    recs = [{"max_new_tokens": 512, "is_correct": False}, {"max_new_tokens": 768, "is_correct": True},
+            {"max_new_tokens": 16384, "is_correct": True}]
+    line = format_done_line(12, 800, raw, recs, 192.0)
+    assert line.startswith("[  12/800] id=102 rpdi_legacy_W16_l1.5")
+    assert "604 token, phanh ở token 131" in line and "@768: ĐÚNG" in line and "@16384: ĐÚNG" in line
+    assert "@512" not in line and line.endswith("3.2 phút")
+
+    raw.update(forced_close=False, close_index=None, finish_reason="length", output_ids=[0] * 16384)
+    line = format_done_line(13, 800, raw, recs, 60.0)
+    assert "không đóng </think>, chạm trần" in line
