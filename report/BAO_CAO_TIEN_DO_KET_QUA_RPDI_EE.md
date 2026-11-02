@@ -5,7 +5,7 @@
 
 - **Đề tài**: Nghiên cứu tối ưu hóa hiệu quả suy luận chuỗi tư duy (Chain-of-Thought) trên mô hình ngôn ngữ nhỏ (Small Language Model - SLM).
 - **Mô hình nghiên cứu**: `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B` (1.5 tỷ tham số).
-- **Phương pháp trọng tâm**: RPDI-EE (*Relative Pattern Drift Indicator - Early Exit*).
+- **Phương pháp trọng tâm**: RPDI-EE (*Reasoning Path Deviation Index - Early Exit*, Guan et al., 2026).
 - **Tập dữ liệu đánh giá**: GSM8K (*Grade School Math 8K*).
 - **Giảng viên hướng dẫn**: Thầy Vũ Hồng.
 - **Thời gian báo cáo**: Tuần 2, Tháng 10/2026.
@@ -33,6 +33,11 @@ Trong tuần làm việc vừa qua, nhóm nghiên cứu đã tập trung thực 
 4. **Soạn thảo báo cáo chuyên sâu Chương 4**:
    - Hoàn thiện tài liệu thuyết minh thực nghiệm chi tiết tại `report/chuong_4_thuc_nghiem_rpdi_ee.md` theo chuẩn học thuật.
 
+5. **Chuẩn bị thí nghiệm so sánh trực tiếp với thiết lập của bài gốc (cập nhật 02/11/2026)**:
+   - Mã nguồn chính thức của RPDI-EE chưa được công bố, nên nhóm cài lại phương pháp theo Algorithm 1 của bài gốc trên vLLM (cùng framework với bài gốc), kèm một bản sao chính xác cài đặt HF đã dùng cho kết quả 768 token.
+   - Mục tiêu: trên cùng mô hình, cùng prompt và cùng tập câu, đo RPDI-EE ở 768 token so với thiết lập của bài gốc ở 16,384 token ($W=512, \lambda=2.0$), rồi kết luận hơn / tương đương / kém hơn theo biên $\delta$ khai báo trước. Thiết kế chi tiết ở Chương 4, Mục 4.8.4.
+   - Trạng thái: đã có mã nguồn (`method_c_rpdi_ee/vllm_engine/`), notebook Colab (`rpdi_vllm_colab.ipynb`) và 21 kiểm thử tự động; chưa có kết quả chạy.
+
 ---
 
 ## 2. Kết Quả Thực Nghiệm Định Lượng
@@ -50,9 +55,11 @@ Bảng dưới đây tổng hợp so sánh trực tiếp giữa phương pháp g
 | **Số token phản hồi trung bình (`</think>`)** | 147.70 tokens | **412.74 tokens** | Tăng +265.04 tokens cho phần lập luận |
 | **Tổng số token trung bình / câu** | 612.22 tokens | **544.59 tokens** | **Tiết kiệm 11.05%** tổng chi phí sinh |
 | **Độ trễ trung bình / câu (Latency)** | 31.44 giây | **28.11 giây** | **Nhanh hơn 10.61%** |
-| **Tỷ lệ kích hoạt phanh sớm (Early Exit Rate)** | 0.00% | **80.14%** (565/705 câu) | Vị trí phanh trung bình: 143.54 steps |
+| **Tỷ lệ kích hoạt phanh sớm (Early Exit Rate)** | 0.00% | **71.49%** (504/705 câu)* | Vị trí phanh trung bình: 131.3 token |
 | **Tỷ lệ cạn kiệt ngân sách (`max_tokens=768`)** | **47.09%** (332/705 câu) | **21.56%** (152/705 câu) | **Giảm 54.2% số ca bị cụt đáp án** |
 | **Tổng thời gian GPU thực thi** | 6.16 giờ | 5.50 giờ | Tiết kiệm 0.66 giờ GPU |
+
+*\*Chỉ tính phanh trong pha suy nghĩ. Cờ `early_exited` gốc báo 80.14% (565 câu, bước trung bình 143.5) vì lỗi phanh nhầm trong pha trả lời ở 61 câu; lỗi đã được sửa trong `logits_processor.py` (xem Chương 4, Mục 4.6.5).*
 
 ---
 
@@ -79,22 +86,27 @@ $$\frac{\text{Số ca giải cứu}}{\text{Số ca phanh nhầm}} = \frac{163}{3
 | :--- | :---: | :---: | :--- |
 | **Mức tăng Accuracy ($\Delta \text{Acc}$)** | **+19.00%** (59.0% -> 78.0%) | **+18.58%** (53.2% -> 71.8%) | Độ ổn định gần như tuyệt đối ($\Delta = 0.42\%$) |
 | **Tỷ lệ cắt giảm Token suy nghĩ** | **73.6%** | **71.6%** | Đồng nhất ở mức ~72% |
-| **Vị trí bước phanh trung bình** | 122.4 tokens | 143.5 tokens | Chênh lệch nhỏ (~21 tokens) do bài toán phong phú hơn |
-| **Tỷ lệ kích hoạt phanh** | 75.0% | 80.1% | Ổn định ở khoảng 3/4 đến 4/5 câu hỏi |
+| **Vị trí bước phanh trung bình** | 122.4 tokens | 131.3 tokens | Chênh lệch nhỏ (~9 tokens) |
+| **Tỷ lệ kích hoạt phanh** | 75.0% | 71.5% | Ổn định ở khoảng 3/4 số câu hỏi (705 câu: chỉ tính phanh trong pha suy nghĩ) |
 | **Tỷ lệ cạn token ở Standard** | 45.0% | 47.1% | Khẳng định bản chất nghẽn token cố hữu của SLM |
 
 ---
 
 ### 2.4. So sánh thực nghiệm của đề tài với bài báo gốc (arXiv:2603.14251)
 
-| Tiêu chí đối chứng | Bài báo gốc (Li et al., 2026) | Thực nghiệm của đề tài | Ý nghĩa khoa học |
+*Ghi chú (02/11/2026): bảng này đã được đối chiếu lại với bản PDF của bài gốc. Bản trước ghi sai rằng bài gốc chưa khảo sát mô hình 1.5B, dùng sampling và ngân sách 32k token.*
+
+| Tiêu chí đối chứng | Bài báo gốc (Guan et al., 2026) | Thực nghiệm của đề tài | Ý nghĩa khoa học |
 | :--- | :--- | :--- | :--- |
-| **Quy mô mô hình** | DeepSeek-R1-Distill-Qwen 7B/14B/32B, Qwen3-30B/235B | DeepSeek-R1-Distill-Qwen **1.5B** | Đề tài tiên phong kiểm chứng trên dòng SLM 1.5B (chưa được bài báo gốc khảo sát). |
-| **Chiến lược giải mã** | Sampling ($T \ne 0$) | **Greedy Decoding** (`do_sample=False`) | Đảm bảo tính tất định và khả năng tái lập 100% trong môi trường nghiên cứu chuẩn. |
-| **Ngân sách Token** | 32,768 tokens (rất lớn) | **768 tokens** (tài nguyên giới hạn) | Phù hợp với kịch bản triển khai thực tế trên thiết bị biên (edge devices). |
-| **Cấu hình tối ưu** | $W = 512, \lambda = 2.0$ | **$W^* = 16, \lambda^* = 1.5$** | Với SLM, cửa sổ ngắn hơn và ngưỡng nhạy hơn giúp phát hiện suy luận lạc hướng sớm hơn. |
-| **Mức tăng Accuracy** | Trung bình **+3.9%** (distillation: **+5.1%**) | **+18.58% ~ +19.00%** (53.2% lên 71.8%) | SLM hưởng lợi lớn hơn gấp nhiều lần nhờ khắc phục triệt để hiện tượng cạn ngân sách token. |
-| **Xu hướng cốt lõi** | RPDI-EE vượt trội hơn Vanilla CoT và Hard Truncation | Tái xác nhận nhất quán trên cả 100 câu và 705 câu | Khẳng định tính đúng đắn của nguyên lý toán học RPDI khi chuyển dịch sang mô hình nhỏ. |
+| **Quy mô mô hình** | 8 mô hình: DeepSeek-R1-Distill-Qwen **1.5B**/7B/14B/32B, DeepSeek-R1-Distill-Llama 8B/70B, Qwen3-30B-A3B-Thinking, Qwen3-235B-A22B-Thinking | DeepSeek-R1-Distill-Qwen **1.5B** | Bài gốc đã thử RPDI-EE trên chính mô hình 1.5B (Bảng 1 của bài). Điểm mới của đề tài nằm ở chế độ ngân sách hẹp, không nằm ở cỡ mô hình. |
+| **Chiến lược giải mã** | Greedy (Phụ lục B của bài) | **Greedy Decoding** (`do_sample=False`) | Cùng chiến lược giải mã. Kết quả tất định và tái lập được. |
+| **Ngân sách Token** | 16,384 tokens (32,768 cho Qwen3-Thinking) | **768 tokens** (tài nguyên giới hạn) | Ngân sách hẹp hơn khoảng 21 lần, mô phỏng kịch bản triển khai trên thiết bị biên (edge devices). |
+| **Tập đánh giá** | 7 tập: GSM8K, AMC23, MATH500 (gộp thành Math Easy); AIME2024, AIME2025, OlympiadBench (Math Hard); GPQA-Diamond. Không báo cáo riêng GSM8K | GSM8K (705 câu) | Chỉ so được với nhóm Math Easy gộp, vì bài gốc không có con số GSM8K riêng. |
+| **Cấu hình** | $W = 512, \lambda = 2.0$, dùng chung cho cả 8 mô hình (chọn qua ablation trên 32B) | **$W^* = 16, \lambda^* = 1.5$** | Ở 768 token, cửa sổ 512 gần như không đủ dữ liệu để kích hoạt, nên cấu hình tối ưu dịch chuyển theo ngân sách. |
+| **Mức tăng Accuracy** | Trên 1.5B: Math Easy 65.7% → 69.4% (**+3.7**); trung bình 7 tập 40.0% → 43.4% (+3.4). Trên cả 8 mô hình, bài ghi trung bình +3.9% (distillation +5.1%) | **+18.58%** trên 705 câu (53.2% lên 71.8%); +19.00% trên 100 câu | Hai con số đo ở hai chế độ ngân sách khác nhau. Ở 768 token, mức tăng chủ yếu đến từ việc giải cứu các câu cạn ngân sách, nên không so sánh trực tiếp theo kiểu "lớn hơn gấp nhiều lần". |
+| **Baseline đối chứng** | Vanilla CoT, NoThinking, ThinkLess, DEER, Dynasor-CoT. Trên 1.5B chỉ có Vanilla CoT và DEER. Không có đối chứng cắt cứng ở cùng số token suy nghĩ | Vanilla CoT; cắt cứng $N \in \{32, …, 256\}$ | Cùng chiều với bài gốc: RPDI-EE vượt Vanilla CoT. So sánh với cắt cứng là phần đề tài bổ sung. |
+
+*Con số +3.9% lấy từ phần chữ của bài gốc. Tính lại từ Bảng 1 của bài thì được khoảng +4.3.*
 
 ---
 
@@ -104,12 +116,14 @@ $$\frac{\text{Số ca giải cứu}}{\text{Số ca phanh nhầm}} = \frac{163}{3
    - Ở mô hình nhỏ 1.5B, gần một nửa số câu hỏi (47.09%) bị rơi vào trạng thái suy nghĩ luẩn quẩn cho đến khi cạn sạch ngân sách 768 tokens, dẫn đến việc không kịp xuất thẻ đóng `</think>` và bị chấm sai.
    - RPDI-EE nhận diện biến động entropy tương đối bất thường và cưỡng bức chuyển trạng thái, giúp mô hình giữ lại hơn 400 token để trình bày lời giải tường minh.
 
-2. **Sự dịch chuyển của siêu tham số tối ưu theo quy mô mô hình**:
-   - Trong bài báo gốc (arXiv:2603.14251), các tác giả đề xuất cấu hình $W=512, \lambda=2.0$ cho các mô hình lớn (7B đến 235B) với ngân sách 32k tokens.
-   - Thực nghiệm của đề tài chứng minh rằng đối với dòng SLM 1.5B và ngân sách 768 tokens, cấu hình tối ưu dịch chuyển về vùng cửa sổ ngắn hơn và nhạy hơn ($W^*=16, \lambda^*=1.5$).
+2. **Sự dịch chuyển của siêu tham số tối ưu theo ngân sách token**:
+   - Bài báo gốc (Guan et al., 2026, arXiv:2603.14251) dùng cấu hình $W=512, \lambda=2.0$ cho cả 8 mô hình, kể cả 1.5B, với ngân sách 16,384 tokens. Cấu hình này được chọn qua ablation trên mô hình 32B.
+   - Thực nghiệm của đề tài cho thấy với ngân sách 768 tokens, cấu hình tối ưu dịch chuyển về vùng cửa sổ ngắn hơn và nhạy hơn ($W^*=16, \lambda^*=1.5$). Vì bài gốc đã dùng $W=512$ cho chính mô hình 1.5B, sự dịch chuyển này gắn với ngân sách chứ không gắn với kích thước mô hình.
 
-3. **Vượt trội hơn cơ chế cắt cứng cố định (Hard Truncation)**:
-   - RPDI phanh có nhận thức dựa trên trạng thái entropy thực tế của chuỗi sinh, đạt độ chính xác 78.00% (trên 100 câu) so với mốc cắt cứng tốt nhất chỉ đạt 75.00% (tại $N=128$).
+3. **So sánh với cơ chế cắt cứng cố định (Hard Truncation): chưa vượt trội**:
+   - Trên 100 câu (mô phỏng), RPDI-EE đạt 78.00% so với 75.00% của cắt cứng tốt nhất ($N=128$). Chênh lệch 3 câu không có ý nghĩa thống kê.
+   - Trên 200 câu held-out chạy thật (id 100–299, `report/bao_cao_doi_chung_200.md`), cắt cứng $N=130$ đạt **72.0%**, RPDI-EE đạt **71.5%** (chênh 0.5 điểm, KTC 95% [−5.3, +6.3], McNemar $p = 1.0$); phanh ngẫu nhiên đạt 68.5%.
+   - Kết luận: ở 768 token, lợi ích chủ yếu đến từ việc kết thúc pha suy nghĩ sớm, chưa đến từ tín hiệu entropy. Ưu điểm của RPDI-EE là không cần chọn trước $N$ và không làm hỏng câu nào mà baseline tự hoàn thành đúng (cắt cứng làm hỏng 4 câu), nhưng khác biệt này chưa đủ lớn để kết luận.
 
 ---
 
@@ -131,7 +145,9 @@ slm-reasoning-project/
 ├── method_c_rpdi_ee/
 │   ├── logits_processor.py                   # Cài đặt giải thuật giám sát RPDI LogitsProcessor
 │   ├── evaluate.py                           # Script thực nghiệm đánh giá chuẩn hóa
-│   └── ablation/                             # Toàn bộ mã nguồn quét lưới và mô phỏng Pareto
+│   ├── ablation/                             # Toàn bộ mã nguồn quét lưới và mô phỏng Pareto
+│   └── vllm_engine/                          # RPDI-EE trên vLLM, suy ra kết quả theo ngân sách, phân tích thống kê
+├── rpdi_vllm_colab.ipynb                     # Notebook Colab chạy thử 200 câu ở 16,384 token
 └── kq.txt                                    # Nhật ký chạy thực nghiệm terminal (11.66 giờ GPU)
 ```
 
@@ -139,6 +155,9 @@ slm-reasoning-project/
 
 ## 5. Kế Hoạch Triển Khai Trong Tuần Tới
 
+0. **So sánh trực tiếp với thiết lập của bài gốc (ưu tiên cao nhất)**:
+   - Chốt biên $\delta$ với thầy hướng dẫn trước khi xem kết quả.
+   - Chạy thử 200 câu (id 100–299) bằng `rpdi_vllm_colab.ipynb`; kiểm tra pipeline vLLM khớp kết quả HF ở 768 token (lệch không quá 2 điểm), sau đó mở rộng lên 605 câu held-out.
 1. **Hoàn tất 614 câu hỏi còn lại của GSM8K**:
    - Chạy tiếp nối (resume) từ câu 706 đến câu 1,319 để hoàn thiện 100% tập dữ liệu chuẩn hóa GSM8K.
 2. **Mở rộng đánh giá trên tập toán MATH500 / SVAMP**:

@@ -71,7 +71,7 @@ Số lượng mẫu phanh
 
 ### 4.3.2. Nhóm Baselines đối chứng (Reference Baselines)
 1. **Standard Baseline (No Exit)**: Mô hình tự do suy nghĩ đến khi tự đóng thẻ `</think>` hoặc cạn kiệt ngân sách 768 tokens.
-2. **Fixed Hard Truncation Baselines ($N \in \{32, 64, 96, 128, 256\}$)**: Cắt cứng mù mạch suy nghĩ tại đúng $N$ tokens bất kể trạng thái entropy. Đây là cơ sở đối chứng quan trọng nhằm chứng minh: *RPDI phanh có nhận thức vượt trội hơn việc cắt dừng ngẫu nhiên*.
+2. **Fixed Hard Truncation Baselines ($N \in \{32, 64, 96, 128, 256\}$)**: Cắt cứng mù mạch suy nghĩ tại đúng $N$ tokens bất kể trạng thái entropy. Đây là cơ sở đối chứng quan trọng nhằm kiểm tra: *RPDI phanh có nhận thức có thật sự vượt trội hơn việc cắt dừng mù hay không* (kết quả ở Mục 4.7.3).
 
 ### 4.3.3. Tối ưu hóa tính toán: "Offline Exit Simulation + Unique Answer Resumption"
 Chạy đầy đủ 16 cấu hình $\times$ 100 câu với tốc độ ~30s/câu sẽ tiêu tốn hơn **13 giờ GPU**. Đề tài đã đề xuất và hiện thực hóa giải thuật tối ưu hóa 3 pha:
@@ -139,7 +139,7 @@ Bảng 4.1 tổng hợp toàn diện kết quả thực nghiệm của 16 cấu 
 
 ### Phân tích đường biên Pareto:
 1. **Điểm cực trị Pareto Frontier**: Điểm cấu hình **`RPDI(W=16, λ=1.5)`** nằm ở vị trí cao nhất và xa nhất về bên trái, áp đảo 15 cấu hình RPDI còn lại. Có hai giới hạn cần lưu ý:
-   * **So với cắt cứng**: `HardTrunc(N=128)` đạt 75% với lượng token gần tương đương. Chênh lệch 3 câu trên 100 câu **không có ý nghĩa thống kê**, nên tập 100 câu chưa đủ để kết luận RPDI vượt trội cắt cứng. Phép so sánh này được làm lại trên 605 câu held-out (Mục 4.7.3).
+   * **So với cắt cứng**: `HardTrunc(N=128)` đạt 75% với lượng token gần tương đương. Chênh lệch 3 câu trên 100 câu **không có ý nghĩa thống kê**, nên tập 100 câu chưa đủ để kết luận RPDI vượt trội cắt cứng. Phép so sánh này được làm lại bằng lượt chạy thật trên 200 câu held-out (Mục 4.7.3).
    * **Điểm tối ưu nằm ở góc lưới**: $W=16$ và $\lambda=1.5$ đều là giá trị nhỏ nhất đã quét. Cần mở rộng lưới ($W \in \{4, 8\}$, $\lambda \in \{1.1, 1.25\}$) trên tập validation để xác nhận đây là điểm tối ưu thật.
 2. **Xu hướng phân kỳ theo $W$ và $\lambda$**:
    * Khi cố định $W=16$, việc tăng $\lambda$ từ 1.5 lên 3.0 kéo Accuracy giảm đơn điệu từ $78\% \rightarrow 76\% \rightarrow 66\% \rightarrow 61\%$, đồng thời tổng token tăng dần tiệm cận Baseline.
@@ -254,10 +254,22 @@ Bản `RPDILogitsProcessor` dùng trong lượt chạy 705 câu **vẫn tiếp t
 
 ### 4.7.3. Câu hỏi còn mở: Tín hiệu entropy có đóng góp gì so với cắt cứng?
 * Trên 100 câu (mô phỏng), `HardTrunc(N=128)` đạt 75% so với 78% của RPDI-EE; `HardTrunc(N=32)` cũng đạt 69%, cao hơn baseline 10 điểm. Chênh lệch giữa RPDI-EE và cắt cứng **chưa có ý nghĩa thống kê** trên cỡ mẫu này.
-* Vì mức tăng chủ yếu đến từ việc giải phóng ngân sách (Mục 4.7.1), cần tách riêng phần đóng góp của tín hiệu entropy. Hai thực nghiệm đối chứng được thực hiện trên cùng 605 câu held-out bằng `method_c_rpdi_ee/run_controls.py`:
+* Vì mức tăng chủ yếu đến từ việc giải phóng ngân sách (Mục 4.7.1), cần tách riêng phần đóng góp của tín hiệu entropy. Hai thực nghiệm đối chứng được chạy thật bằng `method_c_rpdi_ee/run_controls.py` trên 200 câu held-out đầu tiên (id 100–299; dự kiến mở rộng lên 605 câu):
   1. **Cắt cứng tại 130 token** (xấp xỉ số token suy nghĩ trung bình của RPDI-EE).
   2. **Phanh ngẫu nhiên**: phanh tại biên câu đầu tiên sau một bước $N$ lấy ngẫu nhiên từ phân phối bước phanh thực tế của RPDI-EE. Baseline này giữ nguyên thời điểm phanh "trung bình" và cơ chế chèn thẻ, chỉ bỏ đi tín hiệu entropy.
-* *[Kết quả sẽ được bổ sung sau khi chạy.]* Nếu RPDI-EE vượt cả hai baseline với ý nghĩa thống kê, tín hiệu entropy có giá trị thực trên SLM. Nếu không, kết luận đúng là dưới ngân sách hẹp, nút thắt của SLM là ngân sách, và lợi thế của RPDI-EE là tự điều chỉnh điểm dừng mà không cần chọn trước $N$.
+
+### Bảng 4.7: Đối chứng cắt cứng và phanh ngẫu nhiên (200 câu held-out, ngân sách 768 token)
+
+| Phương pháp | Accuracy | So với RPDI-EE (Δ, KTC 95%) | McNemar $p$ | Số câu baseline tự làm đúng bị làm hỏng |
+| :--- | :---: | :---: | :---: | :---: |
+| Standard | 52.5% | – | – | – |
+| RPDI-EE ($W=16, \lambda=1.5$) | 71.5% | – | – | **0** |
+| Cắt cứng $N=130$ | **72.0%** | +0.5 [−5.3, +6.3] | 1.0 | 4 |
+| Phanh ngẫu nhiên | 68.5% | −3.0 | 0.38 | 5 |
+
+* **Kết quả**: Cắt cứng $N=130$ ngang bằng RPDI-EE (18 câu chỉ cắt cứng đúng so với 17 câu chỉ RPDI-EE đúng). RPDI-EE cao hơn phanh ngẫu nhiên 3 điểm nhưng không có ý nghĩa thống kê. Chi tiết ở `report/bao_cao_doi_chung_200.md`.
+* **Kết luận**: Dưới ngân sách hẹp, nút thắt của SLM là ngân sách. Lợi ích chủ yếu đến từ việc kết thúc pha suy nghĩ sớm để dành token cho pha trả lời, chưa đến từ khả năng chọn thời điểm dừng của tín hiệu entropy. Lợi thế của RPDI-EE là tự điều chỉnh điểm dừng mà không cần chọn trước $N$, và không làm hỏng câu nào mà baseline tự hoàn thành đúng (cắt cứng làm hỏng 4 câu). Khác biệt 0 so với 4 câu này còn quá nhỏ để kết luận.
+* **Hạn chế**: $N=130$ được chọn để khớp số token suy nghĩ trung bình của RPDI-EE, tức là đã biết trước kết quả của RPDI-EE; trong triển khai thực tế $N$ phải được chọn trước.
 
 ---
 
@@ -265,27 +277,68 @@ Bản `RPDILogitsProcessor` dùng trong lượt chạy 705 câu **vẫn tiếp t
 
 ### 4.8.1. Điều Kiện Thực Nghiệm
 
-| Yếu tố | **Bài báo gốc** (Li et al., 2026) | **Thực nghiệm này** |
+| Yếu tố | **Bài báo gốc** (Guan et al., 2026) | **Thực nghiệm này** |
 | :--- | :--- | :--- |
 | **Mô hình** | 8 mô hình: DeepSeek-R1-Distill-Qwen **1.5B** / 7B / 14B / 32B, DeepSeek-R1-Distill-Llama 8B / 70B, Qwen3-30B-A3B-Thinking, Qwen3-235B-A22B-Thinking | DeepSeek-R1-Distill-Qwen **1.5B** |
 | **Chiến lược giải mã** | Greedy | Greedy (`do_sample=False`) |
 | **Ngân sách token** | **16,384** (32,768 cho Qwen3-Thinking) | **768** |
 | **Benchmark** | GSM8K, AMC23, MATH500 (gộp thành "Math Easy"); AIME2024, AIME2025, OlympiadBench ("Math Hard"); GPQA-Diamond | GSM8K |
-| **Baseline đối chứng** | Vanilla CoT; NoThinking, ThinkLess; DEER, Dynasor-CoT (trên 1.5B chỉ có Vanilla CoT và DEER) | Vanilla CoT; cắt cứng $N \in \{32, …, 256\}$ |
-| **Tham số** | $W=512$, $\lambda=2.0$ | $W=16$, $\lambda=1.5$ |
+| **Baseline đối chứng** | Vanilla CoT; NoThinking, ThinkLess; DEER, Dynasor-CoT (trên 1.5B chỉ có Vanilla CoT và DEER) | Vanilla CoT; cắt cứng $N \in \{32, …, 256\}$; phanh ngẫu nhiên |
+| **Tham số** | $W=512$, $\lambda=2.0$ (chọn qua ablation trên 32B, dùng chung cho cả 8 mô hình) | $W=16$, $\lambda=1.5$ |
 | **Kết quả trên 1.5B** | Math Easy: 65.7% → 69.4% (**+3.7**); trung bình 7 tập: 40.0% → 43.4% (+3.4) | GSM8K (605 câu held-out): 52.23% → 71.57% (**+19.34**) |
+| **Phân tích trên 1.5B** | Chỉ có 3 dòng trong Bảng 1 (Vanilla CoT, DEER, RPDI-EE), báo cáo theo nhóm tập dữ liệu. Phân tích tỉ lệ kích hoạt, ablation thành phần và quét $W$/$\lambda$/ngân sách đều làm trên các mô hình 7B–32B | Quét lưới $W \times \lambda$, phân tích theo nhóm cạn ngân sách, đối chứng cắt cứng và phanh ngẫu nhiên, kiểm định McNemar |
 
-*Ghi chú*: Bài báo không báo cáo riêng GSM8K mà gộp vào nhóm Math Easy, nên không so sánh trực tiếp được con số accuracy tuyệt đối.
+*Ghi chú*: Bài báo không báo cáo riêng GSM8K mà gộp vào nhóm Math Easy, nên không so sánh trực tiếp được con số accuracy tuyệt đối. Bài cũng không nêu số câu GSM8K đã dùng, chỉ ghi rằng phần đánh giá theo DEER (Yang et al., 2025). Bài DEER dùng toàn bộ 1,319 câu test. Với mô hình 1.5B ở ngân sách 16,384 token, DEER báo cáo Vanilla CoT đạt 76.1% trên GSM8K, với trung bình 1,617 token mỗi câu, hơn gấp đôi ngân sách 768 của đề tài. Prompt và tập câu khác nhau, nên con số này chỉ dùng làm mốc tham khảo.
 
 ### 4.8.2. Điểm Tương Đồng
 1. **Cùng mô hình, cùng chiến lược giải mã**: Bài báo gốc đã đánh giá RPDI-EE trên chính DeepSeek-R1-Distill-Qwen-1.5B với giải mã Greedy. Thực nghiệm này **không phải lần đầu áp dụng RPDI-EE cho mô hình 1.5B**.
 2. **Cùng chiều tác động**: Cả hai đều ghi nhận RPDI-EE cải thiện accuracy so với Vanilla CoT trên mô hình 1.5B.
 
 ### 4.8.3. Điểm Khác Biệt — Đóng Góp Của Nghiên Cứu
-* **Chế độ ngân sách cực hẹp**: Điểm khác biệt cốt lõi là ngân sách 768 token so với 16,384 token. Ở 16k token, mô hình 1.5B gần như luôn tự kết thúc pha suy nghĩ, nên RPDI-EE chỉ tác động lên chất lượng suy luận (+3.7). Ở 768 token, gần một nửa số câu bị cạn ngân sách, và RPDI-EE chủ yếu giải cứu các câu này (Bảng 4.6). **Mức +19.34 và +3.7 đo hai hiệu ứng khác nhau, không nên so sánh trực tiếp theo kiểu "lớn hơn gấp nhiều lần".**
-* **Siêu tham số dịch chuyển theo ngân sách**: Dưới ngân sách 768 token, cấu hình tối ưu dịch từ $W=512, \lambda=2.0$ sang $W=16, \lambda=1.5$. Điều này hợp lý vì với 768 token, cửa sổ $W=512$ gần như không bao giờ đủ dữ liệu để kích hoạt (Bảng 4.1: $W=128$ đã gần như vô hiệu). Nguyên nhân chính là ngân sách, không phải kích thước mô hình, vì bài báo gốc dùng $W=512$ cho chính mô hình 1.5B.
-* **Phân tích cơ chế và baseline cắt cứng**: Bài báo gốc không so sánh với cắt cứng. Thực nghiệm này bổ sung phép đối chứng với cắt cứng và phanh ngẫu nhiên (Mục 4.7.3).
-* **Kế hoạch nối kết quả với bài gốc**: Khảo sát accuracy theo ngân sách (768 → 1,536 → 4,096 → 16,384 token) trên một tập con, với cả cấu hình $W=16, \lambda=1.5$ và $W=512, \lambda=2.0$. Kỳ vọng mức tăng giảm dần về khoảng +3–4 điểm khi ngân sách đủ rộng.
+* **Chế độ ngân sách cực hẹp**: Điểm khác biệt cốt lõi là ngân sách 768 token so với 16,384 token. Ở 768 token, gần một nửa số câu bị cạn ngân sách, và RPDI-EE chủ yếu giải cứu các câu này (Bảng 4.6). Bài gốc không báo cáo tỉ lệ cạn ngân sách ở 16k token. Trên nhóm Math Easy, độ dài trung bình của 1.5B là 5,615 token, còn xa trần 16,384, nên nhiều khả năng phần lớn câu tự kết thúc. Ở nhóm Math Hard và GPQA, độ dài trung bình lên tới 12,646 và 13,386 token, sát trần, nên không loại trừ được việc một phần mức tăng của bài gốc cũng đến từ hiệu ứng giải cứu. **Mức +19.34 và +3.7 đo ở hai chế độ ngân sách với cơ chế tác động khác nhau, không nên so sánh trực tiếp theo kiểu "lớn hơn gấp nhiều lần".**
+* **Tần suất kích hoạt khác hẳn**: Ở 16k token, RPDI-EE chỉ phanh 2.0% số câu GSM8K (Hình 5 của bài gốc, trung bình trên 7B/14B/32B/Qwen3-30B; bài không có số liệu này cho 1.5B). Ở 768 token, đề tài ghi nhận RPDI-EE phanh trong pha suy nghĩ ở 71.5% số câu (504/705). Ở ngân sách hẹp, RPDI-EE gần như trở thành cơ chế phanh mặc định thay vì một can thiệp hiếm khi xảy ra.
+* **Siêu tham số dịch chuyển theo ngân sách**: Dưới ngân sách 768 token, cấu hình tối ưu dịch từ $W=512, \lambda=2.0$ sang $W=16, \lambda=1.5$. Điều này hợp lý vì với 768 token, cửa sổ $W=512$ gần như không bao giờ đủ dữ liệu để kích hoạt (Bảng 4.1: $W=128$ đã gần như vô hiệu). Nguyên nhân chính là ngân sách, không phải kích thước mô hình, vì bài báo gốc dùng $W=512$ cho chính mô hình 1.5B. Cần lưu ý rằng bài gốc chọn cấu hình này qua ablation trên mô hình 32B, với ngân sách nhỏ nhất được thử là 8,192 token, rồi dùng chung cho mọi mô hình. Bài gốc không tinh chỉnh riêng cho 1.5B.
+* **Phân tích cơ chế và baseline cắt cứng**: Bài báo gốc không có đối chứng cắt cứng ở cùng số token suy nghĩ. Các baseline cắt theo độ dài cố định (NoThinking, ThinkLess) chỉ chạy trên 7B/14B/32B/Qwen3-30B, không có trên 1.5B. Thực nghiệm này bổ sung phép đối chứng với cắt cứng và phanh ngẫu nhiên (Mục 4.7.3).
+* **Nối kết quả với bài gốc**: Xem thí nghiệm ở Mục 4.8.4.
+
+### 4.8.4. Thí Nghiệm So Sánh Trực Tiếp Với Thiết Lập Của Bài Gốc (đang thực hiện)
+
+**Câu hỏi nghiên cứu.** Với ngân sách 768 token (hẹp hơn khoảng 21 lần), RPDI-EE đạt độ chính xác hơn, tương đương hay kém hơn thiết lập của bài gốc (16,384 token, $W=512, \lambda=2.0$), khi đo **trên cùng mô hình, cùng prompt và cùng tập câu**?
+
+**Vì sao không so trực tiếp với con số trong bài.** Bài gốc chỉ báo cáo nhóm Math Easy gộp (GSM8K + AMC23 + MATH500), trong đó MATH500 và AMC23 khó hơn GSM8K nhiều. So 71.57% (GSM8K) với 69.4% (Math Easy) sẽ cho kết luận "hơn bài gốc" sai lệch. Mốc GSM8K riêng duy nhất được công bố là của bài DEER (Vanilla CoT 76.1% ở 16k token), nhưng prompt và tập câu khác. Vì vậy cần tự chạy mốc 16k.
+
+**Cài đặt.** Mã nguồn chính thức của RPDI-EE chưa được công bố (kiểm tra ngày 02/11/2026). Đề tài cài lại phương pháp trên vLLM, framework mà bài gốc sử dụng (Phụ lục B), dưới dạng *logits processor* chạy trực tiếp trong lúc sinh. Có hai chế độ:
+
+| | Chế độ `paper` (Algorithm 1 của bài gốc) | Chế độ `legacy` (bản HF đã cho kết quả 768 token) |
+| :--- | :--- | :--- |
+| Thời điểm kiểm tra | Sau khi sinh $t_i$, kiểm tra $i \ge W$ và $t_i \in B$, dùng entropy của $t_1..t_i$ | Nạp entropy của phân phối kế tiếp trước, rồi kiểm tra token liền trước |
+| Tập biên $B$ | "Giống DEER" (xem dưới) | Dấu câu `. \n ; ? ! ,` |
+| Khi phanh | Chèn đúng một token `</think>` | Ép chuỗi `</think>\n` |
+
+Bài gốc chỉ ghi tập biên "giống hệt DEER", trong khi DEER có hai loại điểm dừng: từ chuyển ý "Wait" (mã nguồn công khai của DEER) và ký tự xuống dòng (biến thể dựa trên entropy). Đề tài chạy cả hai cách hiểu. Với "Wait", `</think>` thay cho token "Wait", đúng như cách DEER dừng và khớp Hình 4 của bài gốc. Chế độ `legacy` được kiểm chứng bằng cách phát lại 100 vết entropy thật: điểm phanh trùng **100/100** với bộ mô phỏng offline của đề tài.
+
+**Thiết kế.**
+* Bốn phương pháp, chạy greedy với fp16 trên GPU T4: Vanilla; RPDI-EE `legacy` ($W=16, \lambda=1.5$); RPDI-EE `paper` ($W=512, \lambda=2.0$) với tập biên "Wait"; và cùng cấu hình đó với tập biên xuống dòng.
+* Chạy thử trên 200 câu (id 100–299), sau đó mở rộng lên 605 câu held-out.
+* **Suy ra mọi ngân sách từ một lần chạy.** Mỗi cặp (câu, phương pháp) chỉ sinh một lần ở 16,384 token. Vì giải mã greedy và quyết định phanh chỉ phụ thuộc phần đã sinh, kết quả ở ngân sách $B$ chính là $B$ token đầu của lần chạy 16k. Một lần chạy cho cả đường accuracy theo ngân sách: 512, 768, 1,024, 1,536, 2,048, 3,072, 4,096, 8,192 và 16,384 token.
+* **Kiểm tra pipeline.** Kết quả vLLM ở 768 token phải lệch không quá 2 điểm so với kết quả HF đã có trên cùng 200 câu (Standard 52.5%, RPDI-EE 71.5%). Đạt điều kiện này thì các con số ở 16k mới được dùng.
+
+**Phân tích.** Chênh lệch accuracy được tính theo cặp (cùng câu hỏi), kèm KTC bootstrap 90% và 95% (10,000 lần lặp) và kiểm định McNemar. Biên $\delta$ được khai báo trước khi xem kết quả. Kết luận được rút ra như sau:
+
+| Điều kiện | Kết luận |
+| :--- | :--- |
+| Cận dưới KTC 95% > 0 | Hơn |
+| KTC 95% nằm trong $(-\delta, 0)$ | Kém hơn một chút, trong biên $\delta$ |
+| Cận trên KTC 95% < 0 và cận dưới $\le -\delta$ | Kém hơn, chưa chứng minh được nằm trong biên $\delta$ |
+| KTC 90% nằm trong $(-\delta, +\delta)$ | Tương đương (TOST, $\alpha = 0.05$) |
+| Cận dưới KTC 95% > $-\delta$ | Không kém hơn quá $\delta$ |
+| Còn lại | Chưa kết luận được |
+
+Báo cáo kèm theo ba góc nhìn: (1) so với thiết lập bài gốc ở 16k; (2) **cùng độ chính xác**: Vanilla cần ngân sách bao nhiêu để đạt bằng RPDI-EE ở 768 token; (3) **cùng ngân sách**: mức tăng ở 768 token. Ngoài ra có tỷ lệ token và tỷ lệ phục hồi = (Acc RPDI@768 − Acc Vanilla@768) / (Acc tham chiếu@16k − Acc Vanilla@768).
+
+**Ước lượng sơ bộ (chỉ để tham khảo).** Nếu tạm dùng mốc của DEER (Vanilla 76.1% với 1,617 token), RPDI-EE ở 768 token (71.57% với khoảng 548 token) kém khoảng 4.5 điểm, dùng khoảng 1/3 số token, và phục hồi khoảng 81% phần accuracy mất đi khi hạ ngân sách từ 16k xuống 768. Con số chính thức sẽ được lấy từ thí nghiệm trên.
+
+**Trạng thái.** Mã nguồn ở `method_c_rpdi_ee/vllm_engine/` (kèm 21 kiểm thử tự động ở `tests/`), notebook Colab ở `rpdi_vllm_colab.ipynb`, kế hoạch chi tiết ở `docs/superpowers/plans/2026-11-02-rpdi-vllm-pilot.md`. *[Kết quả sẽ được bổ sung sau khi chạy.]*
 
 ---
 
@@ -294,5 +347,6 @@ Bản `RPDILogitsProcessor` dùng trong lượt chạy 705 câu **vẫn tiếp t
 1. **Cấu hình tốt nhất trong lưới đã quét**: $W = 16, \lambda = 1.5, \text{min\_steps} = W$. Đây là điểm ở góc lưới nên cần mở rộng lưới trên tập validation để xác nhận.
 2. **Hiệu quả trên dữ liệu held-out**: Trên 605 câu không dùng để chọn tham số, accuracy tăng từ 52.23% lên 71.57% (**+19.34 điểm**, KTC 95% [+15.5, +23.2], McNemar $p \approx 2.4 \times 10^{-21}$), giảm khoảng 71% token suy nghĩ.
 3. **Cơ chế**: Dưới ngân sách 768 token, mức tăng đến gần như hoàn toàn từ việc giải cứu các câu bị cạn ngân sách. RPDI-EE không cải thiện các câu mà mô hình tự kết thúc được.
-4. **Câu hỏi còn mở**: Phần đóng góp riêng của tín hiệu entropy so với cắt cứng và phanh ngẫu nhiên đang được kiểm chứng trên 605 câu held-out (Mục 4.7.3).
-5. **Ý nghĩa học thuật**: Đề tài mở rộng kết quả của bài báo gốc sang chế độ ngân sách token cực hẹp, mô phỏng điều kiện triển khai trên thiết bị biên. Đề tài chỉ ra rằng siêu tham số tối ưu và bản chất cơ chế tác động của RPDI-EE thay đổi đáng kể theo ngân sách.
+4. **Đóng góp riêng của tín hiệu entropy chưa được chứng minh**: Trên 200 câu held-out, cắt cứng $N=130$ đạt 72.0%, ngang RPDI-EE (71.5%, $p = 1.0$). Lợi thế còn lại của RPDI-EE là không cần chọn trước $N$ và không làm hỏng câu baseline tự làm đúng (Mục 4.7.3).
+5. **So sánh với thiết lập bài gốc ở 16,384 token**: Thí nghiệm trên cùng tập câu đang được thực hiện bằng vLLM (Mục 4.8.4).
+6. **Ý nghĩa học thuật**: Đề tài mở rộng kết quả của bài báo gốc sang chế độ ngân sách token cực hẹp, mô phỏng điều kiện triển khai trên thiết bị biên. Đề tài chỉ ra rằng siêu tham số tối ưu và bản chất cơ chế tác động của RPDI-EE thay đổi đáng kể theo ngân sách.
