@@ -1,6 +1,6 @@
 # Báo cáo thực nghiệm đối chứng RPDI-EE: cắt cứng và phanh ngẫu nhiên (200 câu)
 
-> Ngày chạy: 19/10/2026 · Môi trường: Google Colab, Tesla T4, float16 · Phân tích: `method_c_rpdi_ee/analyze_results.py`
+> Ngày chạy: 19/10/2026 · Môi trường: Google Colab, Tesla T4, bfloat16 · Phân tích: `method_c_rpdi_ee/analyze_results.py`
 >
 > Dữ liệu gốc: `results/rpdi_results/controls_*.jsonl` · Bảng thống kê: `report/phan_tich_200.md`, `report/phan_tich_200_vs_rpdi.md`
 
@@ -20,7 +20,8 @@ Bài báo gốc (Guan et al., 2026) không có đối chứng cắt cứng hay p
 | Dữ liệu | 200 câu GSM8K test, id 100–299 (không trùng 100 câu id 0–99 đã dùng để chọn W, λ) |
 | Ngân sách | `max_new_tokens = 768` |
 | Giải mã | Greedy (`do_sample=False`) |
-| Phần cứng | Tesla T4, float16; 4 tiến trình chạy song song trên cùng GPU |
+| Phần cứng | Tesla T4; 4 tiến trình chạy song song trên cùng GPU |
+| Kiểu số | bfloat16. T4 không hỗ trợ bf16 gốc, nhưng chế độ `--torch_dtype auto` khi đó chọn bf16 vì `torch.cuda.is_bf16_supported()` vẫn trả về True. Từ commit `1d82b98` (24/10/2026), `auto` chọn float16 trên T4. |
 | Code | commit `6b4bff9` (đã sửa lỗi phanh trong pha trả lời của `RPDILogitsProcessor`) |
 
 Bốn phương pháp được chạy lại cùng lúc, cùng code, cùng phần cứng:
@@ -90,16 +91,30 @@ Cả ba cách phanh đều vượt Standard rất rõ (p < 1e-5).
 
 ### 3.6. Tính tái lập giữa hai phần cứng
 
-So với lần chạy 705 câu trước (GPU hỗ trợ bf16) trên cùng 200 câu id 100–299:
+> **Đính chính (03/11/2026):** bản trước của báo cáo ghi lần chạy này dùng float16 và kết luận "kết quả không phụ thuộc kiểu số". Log của cả bốn phương pháp (`results/rpdi_results/log_*.txt`) ghi `torch_dtype=torch.bfloat16`. Vì vậy hai lần chạy dưới đây cùng dùng bf16, và phép so này không kiểm tra được ảnh hưởng của kiểu số.
 
-| Phương pháp | Lần trước (bf16) | Lần này (T4, float16) | Số câu có kết quả đúng/sai trùng nhau |
+So với lần chạy 705 câu trước (GPU hỗ trợ bf16) trên cùng 200 câu id 100–299. Cả hai lần đều chạy bằng bf16:
+
+| Phương pháp | Lần trước (bf16) | Lần này (T4, bf16) | Số câu có kết quả đúng/sai trùng nhau |
 | :--- | ---: | ---: | ---: |
 | Standard | 105/200 | 105/200 | 200/200 |
 | RPDI-EE | 143/200 | 143/200 | 200/200 |
 
 Kết quả đúng/sai **trùng 100% trên từng câu**, dù RPDI-EE lần trước chạy bằng code chưa sửa lỗi phanh trong pha trả lời. Điều này cho thấy:
-- Kết quả không phụ thuộc phần cứng hay kiểu số;
+- Khi giữ nguyên kiểu số (bf16), kết quả tái lập được giữa hai GPU;
 - Lỗi phanh trong pha trả lời trước đây chỉ làm sai lệch thống kê *tỷ lệ phanh*, không làm thay đổi accuracy.
+
+Đổi kiểu số thì kết quả từng câu thay đổi đáng kể. Lần chạy bằng vLLM với float16 (`results/pilot_200`) dùng cùng 200 câu, cùng prompt và cùng giải mã greedy. Ở ngân sách 768, kết quả của lần chạy đó so với lần chạy này như sau:
+
+| Phương pháp | HF, bf16 (lần này) | vLLM, float16 | Số câu có kết quả đúng/sai trùng nhau |
+| :--- | ---: | ---: | ---: |
+| Standard | 52.5% | 55.0% | 133/200 (66.5%) |
+| RPDI-EE | 71.5% | 76.0% | 157/200 (78.5%) |
+
+- Văn bản sinh ra tách nhau rất sớm, với trung vị ở khoảng ký tự thứ 30.
+- Mức tăng của RPDI-EE so với Standard vẫn tương tự: +19.0 điểm ở lần chạy này, +21.0 điểm ở lần chạy vLLM.
+
+Phép so này khác cả engine (HF so với vLLM) lẫn kiểu số, nên chưa tách được ảnh hưởng của từng yếu tố. Kết luận an toàn là: accuracy tuyệt đối của từng phương pháp có thể dao động vài điểm theo môi trường chạy. Vì vậy chỉ nên so các phương pháp **chạy trong cùng một môi trường**.
 
 ## 4. Thảo luận
 
