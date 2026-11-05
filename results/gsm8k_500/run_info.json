@@ -1,0 +1,73 @@
+{
+  "args": {
+    "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "data_file": "/content/slm-reasoning-project/common/data/gsm8k_test_full.json",
+    "start": 100,
+    "end": 600,
+    "methods": "standard,rpdi_legacy:16:1.5,rpdi:512:2.0,rpdi:512:2.0:newline",
+    "max_tokens": 16384,
+    "budgets": "512,768,1024,1536,2048,3072,4096,8192,16384",
+    "chunk_size": null,
+    "dtype": "float16",
+    "gpu_memory_utilization": 0.9,
+    "max_num_seqs": 128,
+    "enforce_eager": false,
+    "expand_only": false,
+    "output_dir": "/content/drive/MyDrive/slm_rlvr/vllm_runs/gsm8k_500",
+    "budget_list": [
+      512,
+      768,
+      1024,
+      1536,
+      2048,
+      3072,
+      4096,
+      8192,
+      16384
+    ]
+  },
+  "methods": [
+    {
+      "key": "standard",
+      "kind": "standard",
+      "W": 0,
+      "lam": null,
+      "boundary": ""
+    },
+    {
+      "key": "rpdi_legacy_W16_l1.5",
+      "kind": "rpdi_legacy",
+      "W": 16,
+      "lam": 1.5,
+      "boundary": "punct"
+    },
+    {
+      "key": "rpdi_W512_l2.0_wait",
+      "kind": "rpdi",
+      "W": 512,
+      "lam": 2.0,
+      "boundary": "wait"
+    },
+    {
+      "key": "rpdi_W512_l2.0_newline",
+      "kind": "rpdi",
+      "W": 512,
+      "lam": 2.0,
+      "boundary": "newline"
+    }
+  ],
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "torch": "2.4.0+cu121",
+  "transformers": "4.46.3",
+  "vllm": "0.6.3.post1",
+  "VLLM_USE_V1": "0",
+  "gpu": "Tesla T4",
+  "max_model_len": 16548,
+  "started_at": "2026-11-05 07:26:35",
+  "progress": {
+    "done": 2000,
+    "total": 2000,
+    "elapsed_seconds": 12907.0,
+    "generated_tokens": 4004590
+  }
+}
