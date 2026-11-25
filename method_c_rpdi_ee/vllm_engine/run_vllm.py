@@ -71,7 +71,7 @@ def parse_args(argv=None) -> argparse.Namespace:
                    help="Bước phanh của RPDI-EE theo câu: JSON {id: bước, -1 = không phanh} hoặc raw.jsonl của lần chạy trước.")
     p.add_argument("--random_ref_method", type=str, default="rpdi_legacy_W16_l1.5",
                    help="Phương pháp lấy bước phanh khi --random_ref là raw.jsonl.")
-    p.add_argument("--seed", type=int, default=0, help="Seed cho random/random_matched (cùng công thức với run_controls.py).")
+    p.add_argument("--seed", type=int, default=42, help="Seed cho random/random_matched (cùng công thức và mặc định với run_controls.py).")
     p.add_argument("--expand_only", action="store_true", help="Chỉ tạo lại budgets.jsonl từ raw.jsonl (không cần GPU).")
     p.add_argument("--output_dir", type=str, required=True)
     args = p.parse_args(argv)
