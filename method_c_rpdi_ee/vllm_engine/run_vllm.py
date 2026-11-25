@@ -5,6 +5,10 @@ Phương pháp (--methods, phân tách bằng dấu phẩy):
     standard                  Sinh tự nhiên; vẫn ghi entropy pha suy nghĩ để phân tích offline.
     rpdi:W:lambda[:B]         RPDI-EE đúng Algorithm 1 của bài gốc; B = wait (mặc định) | newline | punct.
     rpdi_legacy:W:lambda      Bản sao chính xác RPDILogitsProcessor (HF) đã dùng cho kết quả 768 token.
+    hardtrunc:N               Đối chứng: cắt cứng, ép "</think>\\n" sau đúng N token suy nghĩ.
+    random                    Đối chứng: phanh ở biên dấu câu đầu tiên sau bước rút ngẫu nhiên từ phân phối
+                              bước phanh của RPDI-EE (--random_ref), seed theo id câu.
+    random_matched            Như random nhưng chỉ ở các câu RPDI-EE đã phanh (khớp tỷ lệ phanh).
 
 File ghi vào --output_dir (mỗi lượt được ghi ngay khi sinh xong, kèm một dòng log):
     raw.jsonl       mỗi dòng = 1 câu x 1 phương pháp: output_ids, vị trí </think>, entropy pha suy nghĩ
@@ -20,6 +24,7 @@ Ví dụ (Colab T4):
 import argparse
 import json
 import os
+import random
 import sys
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -43,6 +48,8 @@ from method_c_rpdi_ee.vllm_engine.rpdi_core import MethodSpec, monitor_for, pars
 DEFAULT_DATA_FILE = os.path.join(ROOT, "common", "data", "gsm8k_test_full.json")
 DEFAULT_METHODS = "standard,rpdi_legacy:16:1.5,rpdi:512:2.0,rpdi:512:2.0:newline"
 DEFAULT_BUDGETS = "512,768,1024,1536,2048,3072,4096,8192,16384"
+DEFAULT_RANDOM_REF = os.path.join(ROOT, "results", "gsm8k_500", "rpdi_exit_ref.json")
+RANDOM_KINDS = ("random", "random_matched")
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -60,6 +67,11 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--gpu_memory_utilization", type=float, default=0.90)
     p.add_argument("--max_num_seqs", type=int, default=128)
     p.add_argument("--enforce_eager", action="store_true", help="Tắt CUDA graph (dùng khi bước capture lỗi).")
+    p.add_argument("--random_ref", type=str, default=DEFAULT_RANDOM_REF,
+                   help="Bước phanh của RPDI-EE theo câu: JSON {id: bước, -1 = không phanh} hoặc raw.jsonl của lần chạy trước.")
+    p.add_argument("--random_ref_method", type=str, default="rpdi_legacy_W16_l1.5",
+                   help="Phương pháp lấy bước phanh khi --random_ref là raw.jsonl.")
+    p.add_argument("--seed", type=int, default=0, help="Seed cho random/random_matched (cùng công thức với run_controls.py).")
     p.add_argument("--expand_only", action="store_true", help="Chỉ tạo lại budgets.jsonl từ raw.jsonl (không cần GPU).")
     p.add_argument("--output_dir", type=str, required=True)
     args = p.parse_args(argv)
@@ -128,6 +140,34 @@ def read_jsonl(path: str) -> List[Dict[str, Any]]:
         return []
     with open(path, "r", encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
+
+
+def exit_ref_from_raws(raws: List[Dict[str, Any]], method: str) -> Dict[int, int]:
+    """{id câu: bước phanh (-1 nếu không phanh)} của `method` trong raw.jsonl."""
+    return {int(r["sample_id"]): (int(r["exit_step"]) if r.get("forced_close") else -1)
+            for r in raws if r["method"] == method}
+
+
+def load_exit_ref(path: str, method: str) -> Dict[int, int]:
+    if path.endswith(".jsonl"):
+        ref = exit_ref_from_raws(read_jsonl(path), method)
+    else:
+        with open(path, "r", encoding="utf-8") as f:
+            ref = {int(k): int(v) for k, v in json.load(f)["exit_steps"].items()}
+    if not any(v >= 0 for v in ref.values()):
+        raise SystemExit(f"Không có bước phanh nào trong {path} (phương pháp {method})")
+    return ref
+
+
+def draw_exit_at(spec: MethodSpec, sample_id: int, ref: Dict[int, int], seed: int) -> Optional[int]:
+    """Bước phanh cho random/random_matched, rút từ mọi bước phanh của RPDI-EE trong `ref`.
+    random_matched trả None (không phanh) ở câu mà RPDI-EE không phanh. Phương pháp khác: None."""
+    if spec.kind not in RANDOM_KINDS:
+        return None
+    if spec.kind == "random_matched" and ref[sample_id] < 0:
+        return None
+    pool = sorted(v for v in ref.values() if v >= 0)
+    return random.Random(seed * 1_000_003 + sample_id).choice(pool)
 
 
 def write_json(path: str, obj: Dict[str, Any]) -> None:
@@ -231,6 +271,14 @@ def generate(args: argparse.Namespace) -> None:
     info_path = os.path.join(args.output_dir, "run_info.json")
 
     dataset = load_gsm8k_test(filepath=args.data_file)[args.start:args.end]
+    exit_ref: Dict[int, int] = {}
+    if any(spec.kind in RANDOM_KINDS for spec in args.method_specs):
+        exit_ref = load_exit_ref(args.random_ref, args.random_ref_method)
+        missing = [s["id"] for s in dataset if s["id"] not in exit_ref]
+        if missing and any(spec.kind == "random_matched" for spec in args.method_specs):
+            raise SystemExit(f"--random_ref thiếu {len(missing)} câu (vd id {missing[:5]}), không chạy được random_matched")
+        n_exit = sum(v >= 0 for v in exit_ref.values())
+        print(f"[*] Phân phối bước phanh: {n_exit}/{len(exit_ref)} câu RPDI-EE phanh, từ {args.random_ref}")
     done: Set[Tuple[int, str, int]] = {(r["sample_id"], r["method"], r["max_tokens"]) for r in read_jsonl(raw_path)}
     todo: List[Tuple[Dict[str, Any], MethodSpec]] = [
         (s, spec) for s in dataset for spec in args.method_specs if (s["id"], spec.key, args.max_tokens) not in done
@@ -296,7 +344,7 @@ def generate(args: argparse.Namespace) -> None:
     heartbeat = Heartbeat(interval=60.0)
     pending: Dict[str, Tuple[Dict[str, Any], MethodSpec, Any]] = {}
     for n, (s, spec) in enumerate(todo):
-        mon = monitor_for(spec, tokenizer, boundary_cache)
+        mon = monitor_for(spec, tokenizer, boundary_cache, exit_at=draw_exit_at(spec, s["id"], exit_ref, args.seed))
         params = SamplingParams(temperature=0.0, max_tokens=args.max_tokens,
                                 logits_processors=[VLLMProcessor(mon, heartbeat)], skip_special_tokens=False)
         engine.add_request(str(n), {"prompt_token_ids": prompt_ids[s["id"]]}, params)
@@ -315,6 +363,8 @@ def generate(args: argparse.Namespace) -> None:
                 comp = out.outputs[0]
                 raw = build_raw(s, spec.key, args.max_tokens, prompt_ids[s["id"]], list(comp.token_ids),
                                 comp.finish_reason, comp.stop_reason, mon, close_id, eos_id)
+                if spec.kind in RANDOM_KINDS:
+                    raw["scheduled_exit_at"] = mon.exit_at
                 recs = expand_to_budgets(raw, decode, close_id, args.budget_list)
                 fraw.write(json.dumps(raw, ensure_ascii=False) + "\n")
                 for rec in recs:

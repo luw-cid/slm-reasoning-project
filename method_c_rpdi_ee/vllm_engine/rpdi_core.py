@@ -13,7 +13,15 @@ Hai chế độ:
   đã dùng cho các kết quả 768 token): nạp entropy của phân phối kế tiếp trước, rồi xét token liền
   trước có phải biên dấu câu không (step >= W); phanh bằng chuỗi ``"</think>\\n"``.
 
-``RPDIMonitor.step`` được gọi một lần cho mỗi token sinh ra, trả về id token cần ép (hoặc None).
+Đối chứng (``ScheduledMonitor``, không dùng entropy), bám ``ScheduledExitLogitsProcessor`` (HF):
+
+- ``hardtrunc:N``: ép ``"</think>\\n"`` ngay sau đúng N token suy nghĩ.
+- ``random``: phanh tại biên dấu câu đầu tiên kể từ một bước ``exit_at`` rút ngẫu nhiên từ phân phối
+  bước phanh của RPDI-EE (run_vllm.py rút theo seed và id câu).
+- ``random_matched``: như ``random`` nhưng chỉ ở những câu mà RPDI-EE đã phanh, nên tỷ lệ phanh khớp
+  RPDI-EE; tách được "có phanh hay không" khỏi "phanh ở đâu".
+
+``step`` được gọi một lần cho mỗi token sinh ra, trả về id token cần ép (hoặc None).
 """
 
 from dataclasses import dataclass
@@ -52,19 +60,25 @@ def build_boundary_ids(tokenizer, preset: str) -> FrozenSet[int]:
 @dataclass(frozen=True)
 class MethodSpec:
     key: str
-    kind: str  # "standard" | "rpdi" | "rpdi_legacy"
+    kind: str  # "standard" | "rpdi" | "rpdi_legacy" | "hardtrunc" | "random" | "random_matched"
     W: int
     lam: Optional[float]
     boundary: str
 
 
 def parse_method(spec: str) -> MethodSpec:
-    """``standard`` | ``rpdi:W:lambda[:wait|newline|punct]`` | ``rpdi_legacy:W:lambda``."""
+    """``standard`` | ``rpdi:W:lambda[:wait|newline|punct]`` | ``rpdi_legacy:W:lambda``
+    | ``hardtrunc:N`` | ``random`` | ``random_matched``."""
     parts = spec.strip().split(":")
     name = parts[0]
     if name == "standard" and len(parts) == 1:
         return MethodSpec("standard", "standard", 0, None, "")
+    if name in ("random", "random_matched") and len(parts) == 1:
+        return MethodSpec(name, name, 0, None, "punct")
     try:
+        if name == "hardtrunc" and len(parts) == 2:
+            N = int(parts[1])
+            return MethodSpec(f"hardtrunc_N{N}", "hardtrunc", N, None, "")
         if name == "rpdi" and len(parts) in (3, 4):
             W, lam = int(parts[1]), float(parts[2])
             boundary = parts[3] if len(parts) == 4 else "wait"
@@ -175,8 +189,52 @@ class RPDIMonitor:
         return None
 
 
-def monitor_for(spec: MethodSpec, tokenizer, boundary_cache: Dict[str, FrozenSet[int]]) -> RPDIMonitor:
-    """Tạo monitor cho một request theo MethodSpec (``standard`` = chỉ ghi entropy, không phanh)."""
+class ScheduledMonitor:
+    """Đối chứng không dùng entropy: ép ``close_ids`` khi đã có ít nhất ``exit_at`` token suy nghĩ
+    (và, nếu ``align``, token liền trước là biên). ``exit_at=None``: không bao giờ phanh.
+    Không gọi ``stats()`` nên không tốn thêm phép tính softmax; ``entropies`` luôn rỗng."""
+
+    def __init__(self, *, exit_at: Optional[int], align: bool, boundary_ids: FrozenSet[int],
+                 think_close_id: int, close_ids: Sequence[int]):
+        self.exit_at = exit_at
+        self.align = align
+        self.boundary_ids = boundary_ids
+        self.think_close_id = think_close_id
+        self.close_ids = list(close_ids)
+        self.entropies: List[float] = []
+        self.early_exited = False
+        self.exit_step = -1
+        self.rpdi_at_exit = 0.0
+        self.closed = False
+        self._forced_idx: Optional[int] = None
+
+    def step(self, prompt_ids: Sequence[int], output_ids: Sequence[int], stats: Stats) -> Optional[int]:
+        if self.closed:
+            return None
+        if self._forced_idx is not None:
+            if self._forced_idx < len(self.close_ids):
+                tok = self.close_ids[self._forced_idx]
+                self._forced_idx += 1
+                return tok
+            self.closed = True
+            return None
+        last = output_ids[-1] if len(output_ids) else (prompt_ids[-1] if len(prompt_ids) else None)
+        if last == self.think_close_id:
+            self.closed = True
+            return None
+        k = len(output_ids)
+        if self.exit_at is not None and k >= self.exit_at and (not self.align or last in self.boundary_ids):
+            self.early_exited = True
+            self.exit_step = k
+            self._forced_idx = 1
+            return self.close_ids[0]
+        return None
+
+
+def monitor_for(spec: MethodSpec, tokenizer, boundary_cache: Dict[str, FrozenSet[int]],
+                exit_at: Optional[int] = None):
+    """Tạo monitor cho một request theo MethodSpec (``standard`` = chỉ ghi entropy, không phanh).
+    ``exit_at``: bước phanh đã rút cho câu này (chỉ dùng cho ``random``/``random_matched``)."""
     think_close = tokenizer.encode("</think>", add_special_tokens=False)
     if len(think_close) != 1:
         raise RuntimeError(f"'</think>' phải là một token, nhận được {think_close}")
@@ -186,8 +244,16 @@ def monitor_for(spec: MethodSpec, tokenizer, boundary_cache: Dict[str, FrozenSet
         return RPDIMonitor(W=0, lam=None, mode="paper", boundary="", boundary_ids=frozenset(),
                            think_close_id=close_id, close_ids=[close_id])
 
+    forced_seq = tokenizer.encode("</think>\n", add_special_tokens=False)
+    if spec.kind == "hardtrunc":
+        return ScheduledMonitor(exit_at=spec.W, align=False, boundary_ids=frozenset(), think_close_id=close_id,
+                                close_ids=forced_seq)
+
     if spec.boundary not in boundary_cache:
         boundary_cache[spec.boundary] = build_boundary_ids(tokenizer, spec.boundary)
+    if spec.kind in ("random", "random_matched"):
+        return ScheduledMonitor(exit_at=exit_at, align=True, boundary_ids=boundary_cache[spec.boundary],
+                                think_close_id=close_id, close_ids=forced_seq)
     if spec.kind == "rpdi_legacy":
         return RPDIMonitor(W=spec.W, lam=spec.lam, mode="legacy", boundary=spec.boundary,
                            boundary_ids=boundary_cache[spec.boundary], think_close_id=close_id,

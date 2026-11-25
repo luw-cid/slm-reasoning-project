@@ -1,3 +1,5 @@
+import pytest
+
 from method_c_rpdi_ee.vllm_engine.run_vllm import gpu_memory_problem, parse_args
 
 GIB = 1024 ** 3
@@ -73,3 +75,29 @@ def test_format_done_line():
     raw.update(forced_close=False, close_index=None, finish_reason="length", output_ids=[0] * 16384)
     line = format_done_line(13, 800, raw, recs, 60.0)
     assert "không đóng </think>, chạm trần" in line
+
+
+def test_exit_ref_from_raws_keeps_only_target_method():
+    from method_c_rpdi_ee.vllm_engine.run_vllm import exit_ref_from_raws
+
+    raws = [
+        {"sample_id": 1, "method": "rpdi_legacy_W16_l1.5", "forced_close": True, "exit_step": 40},
+        {"sample_id": 2, "method": "rpdi_legacy_W16_l1.5", "forced_close": False, "exit_step": -1},
+        {"sample_id": 1, "method": "standard", "forced_close": False, "exit_step": -1},
+    ]
+    assert exit_ref_from_raws(raws, "rpdi_legacy_W16_l1.5") == {1: 40, 2: -1}
+
+
+def test_draw_exit_at_is_seeded_and_matched_skips_non_exits():
+    from method_c_rpdi_ee.vllm_engine.rpdi_core import parse_method
+    from method_c_rpdi_ee.vllm_engine.run_vllm import draw_exit_at
+
+    ref = {1: 40, 2: -1, 3: 90}
+    rnd, matched, ht = parse_method("random"), parse_method("random_matched"), parse_method("hardtrunc:130")
+    a = draw_exit_at(rnd, 2, ref, seed=0)
+    assert a in (40, 90) and a == draw_exit_at(rnd, 2, ref, seed=0)
+    assert draw_exit_at(matched, 2, ref, seed=0) is None          # RPDI-EE không phanh câu 2
+    assert draw_exit_at(matched, 1, ref, seed=0) in (40, 90)
+    assert draw_exit_at(ht, 1, ref, seed=0) is None               # cắt cứng không cần rút
+    with pytest.raises(KeyError):
+        draw_exit_at(matched, 99, ref, seed=0)

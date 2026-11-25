@@ -2,6 +2,7 @@ import pytest
 
 from conftest import FakeTokenizer
 from method_c_rpdi_ee.vllm_engine.rpdi_core import (
+    ScheduledMonitor,
     MethodSpec,
     RPDIMonitor,
     build_boundary_ids,
@@ -57,7 +58,7 @@ def test_parse_method_keys():
     assert parse_method("rpdi:512:2.0") == MethodSpec("rpdi_W512_l2.0_wait", "rpdi", 512, 2.0, "wait")
     assert parse_method("rpdi:512:2.0:newline").key == "rpdi_W512_l2.0_newline"
     assert parse_method("rpdi_legacy:16:1.5") == MethodSpec("rpdi_legacy_W16_l1.5", "rpdi_legacy", 16, 1.5, "punct")
-    for bad in ("rpdi:16", "rpdi:16:1.5:tab", "hardtrunc:130", "rpdi_legacy:16:1.5:wait"):
+    for bad in ("rpdi:16", "rpdi:16:1.5:tab", "hardtrunc", "hardtrunc:x", "random:1", "rpdi_legacy:16:1.5:wait"):
         with pytest.raises(ValueError):
             parse_method(bad)
 
@@ -163,3 +164,61 @@ def test_monitor_for_uses_spec():
     assert m.mode == "paper" and m.close_ids == [CLOSE] and WAIT in m.boundary_ids
     m = monitor_for(parse_method("standard"), TOK, cache)
     assert m.lam is None and m.mode == "paper"
+
+
+# ------------------------------------------------------------------ đối chứng: cắt cứng, phanh ngẫu nhiên
+NO_STATS = lambda: (_ for _ in ()).throw(AssertionError("không được tính entropy"))  # noqa: E731
+
+
+def drive(monitor, tokens, prompt=(THINK_OPEN,)):
+    """Lần gọi thứ k thấy output_ids = tokens[:k]; trả về các giá trị step() trả về."""
+    return [monitor.step(list(prompt), tokens[:k], NO_STATS) for k in range(len(tokens) + 1)]
+
+
+def test_parse_control_methods():
+    assert parse_method("hardtrunc:130") == MethodSpec("hardtrunc_N130", "hardtrunc", 130, None, "")
+    assert parse_method("random") == MethodSpec("random", "random", 0, None, "punct")
+    assert parse_method("random_matched") == MethodSpec("random_matched", "random_matched", 0, None, "punct")
+
+
+def test_hardtrunc_forces_close_after_exactly_N_think_tokens():
+    m = ScheduledMonitor(exit_at=3, align=False, boundary_ids=frozenset({DOT}),
+                         think_close_id=CLOSE, close_ids=[CLOSE, NL])
+    out = drive(m, [A, A, A, CLOSE, NL, A])
+    # Gọi lần 4 (đã có 3 token suy nghĩ): ép </think>, lần 5 ép xuống dòng, sau đó thả tự do
+    assert out == [None, None, None, CLOSE, NL, None, None]
+    assert m.early_exited and m.exit_step == 3
+    assert m.entropies == []
+
+
+def test_scheduled_natural_close_first_means_no_exit():
+    m = ScheduledMonitor(exit_at=3, align=False, boundary_ids=frozenset(),
+                         think_close_id=CLOSE, close_ids=[CLOSE, NL])
+    out = drive(m, [A, CLOSE, A, A, A])
+    assert out == [None] * 6 and not m.early_exited and m.exit_step == -1
+
+
+def test_random_waits_for_boundary_after_exit_at():
+    m = ScheduledMonitor(exit_at=2, align=True, boundary_ids=frozenset({DOT}),
+                         think_close_id=CLOSE, close_ids=[CLOSE, NL])
+    # Token 2 không phải biên, token 3 là "." -> phanh ở lần gọi sau token 3
+    out = drive(m, [A, A, A, DOT, CLOSE, NL])
+    assert out == [None, None, None, None, CLOSE, NL, None]
+    assert m.exit_step == 4
+
+
+def test_scheduled_without_exit_at_never_exits():
+    m = ScheduledMonitor(exit_at=None, align=True, boundary_ids=frozenset({DOT}),
+                         think_close_id=CLOSE, close_ids=[CLOSE, NL])
+    assert drive(m, [DOT] * 5) == [None] * 6 and not m.early_exited
+
+
+def test_monitor_for_controls():
+    cache = {}
+    m = monitor_for(parse_method("hardtrunc:130"), TOK, cache)
+    assert isinstance(m, ScheduledMonitor) and m.exit_at == 130 and not m.align
+    assert m.close_ids == [CLOSE, NL]
+    m = monitor_for(parse_method("random"), TOK, cache, exit_at=77)
+    assert m.exit_at == 77 and m.align and DOT in m.boundary_ids
+    m = monitor_for(parse_method("random_matched"), TOK, cache, exit_at=None)
+    assert m.exit_at is None
