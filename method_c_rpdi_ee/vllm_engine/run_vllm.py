@@ -45,6 +45,11 @@ from common.model_loader import DEFAULT_MODEL_ID, format_reasoning_prompt  # noq
 from method_c_rpdi_ee.vllm_engine.budgets import expand_to_budgets  # noqa: E402
 from method_c_rpdi_ee.vllm_engine.rpdi_core import MethodSpec, monitor_for, parse_method  # noqa: E402
 
+DATASETS = {  # tên -> (file JSON đã chuẩn hóa, bộ chấm). SVAMP và MATH500: python common/prepare_datasets.py
+    "gsm8k": ("gsm8k_test_full.json", "numeric"),
+    "svamp": ("svamp_full.json", "numeric"),
+    "math500": ("math500_test.json", "math"),
+}
 DEFAULT_DATA_FILE = os.path.join(ROOT, "common", "data", "gsm8k_test_full.json")
 DEFAULT_METHODS = "standard,rpdi_legacy:16:1.5,rpdi:512:2.0,rpdi:512:2.0:newline"
 DEFAULT_BUDGETS = "512,768,1024,1536,2048,3072,4096,8192,16384"
@@ -55,7 +60,14 @@ RANDOM_KINDS = ("random", "random_matched")
 def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="RPDI-EE trên vLLM: sinh ở ngân sách lớn, suy ra mọi ngân sách nhỏ hơn.")
     p.add_argument("--model_id", type=str, default=DEFAULT_MODEL_ID)
-    p.add_argument("--data_file", type=str, default=DEFAULT_DATA_FILE)
+    p.add_argument("--dataset", type=str, default="gsm8k", choices=sorted(DATASETS),
+                   help="Bộ dữ liệu; quyết định file mặc định và cách chấm (math500: so khớp \boxed{} LaTeX).")
+    p.add_argument("--data_file", type=str, default=None, help="Ghi đè file dữ liệu của --dataset.")
+    p.add_argument("--temperature", type=float, default=0.0, help="0 = greedy (mặc định). DeepSeek khuyến nghị 0.6.")
+    p.add_argument("--top_p", type=float, default=1.0)
+    p.add_argument("--sampling_seed", type=int, default=0,
+                   help="Seed khi temperature > 0; mỗi câu dùng seed riêng (sampling_seed*1000003 + id) nên kết quả "
+                        "không phụ thuộc cách vLLM gộp lô, và mẹo suy ra mọi ngân sách từ một lượt vẫn đúng.")
     p.add_argument("--start", type=int, default=100, help="Chỉ số câu bắt đầu (mặc định 100: bỏ 100 câu dùng để chọn W, lambda).")
     p.add_argument("--end", type=int, default=300, help="Chỉ số câu kết thúc (không bao gồm).")
     p.add_argument("--methods", type=str, default=DEFAULT_METHODS)
@@ -77,7 +89,14 @@ def parse_args(argv=None) -> argparse.Namespace:
     args = p.parse_args(argv)
     args.method_specs = [parse_method(m) for m in args.methods.split(",") if m.strip()]
     args.budget_list = sorted({int(b) for b in args.budgets.split(",") if b.strip()})
+    data_name, args.grader = DATASETS[args.dataset]
+    if args.data_file is None:
+        args.data_file = os.path.join(ROOT, "common", "data", data_name)
     return args
+
+
+def request_seed(sampling_seed: int, sample_id: int) -> int:
+    return sampling_seed * 1_000_003 + sample_id
 
 
 class Heartbeat:
@@ -345,8 +364,10 @@ def generate(args: argparse.Namespace) -> None:
     pending: Dict[str, Tuple[Dict[str, Any], MethodSpec, Any]] = {}
     for n, (s, spec) in enumerate(todo):
         mon = monitor_for(spec, tokenizer, boundary_cache, exit_at=draw_exit_at(spec, s["id"], exit_ref, args.seed))
-        params = SamplingParams(temperature=0.0, max_tokens=args.max_tokens,
-                                logits_processors=[VLLMProcessor(mon, heartbeat)], skip_special_tokens=False)
+        sampling = {"temperature": args.temperature, "top_p": args.top_p,
+                    "seed": request_seed(args.sampling_seed, s["id"])} if args.temperature > 0 else {"temperature": 0.0}
+        params = SamplingParams(max_tokens=args.max_tokens, logits_processors=[VLLMProcessor(mon, heartbeat)],
+                                skip_special_tokens=False, **sampling)
         engine.add_request(str(n), {"prompt_token_ids": prompt_ids[s["id"]]}, params)
         pending[str(n)] = (s, spec, mon)
 
@@ -363,6 +384,10 @@ def generate(args: argparse.Namespace) -> None:
                 comp = out.outputs[0]
                 raw = build_raw(s, spec.key, args.max_tokens, prompt_ids[s["id"]], list(comp.token_ids),
                                 comp.finish_reason, comp.stop_reason, mon, close_id, eos_id)
+                raw["dataset"], raw["grader"] = args.dataset, args.grader
+                if args.temperature > 0:
+                    raw["sampling"] = {"temperature": args.temperature, "top_p": args.top_p,
+                                       "seed": request_seed(args.sampling_seed, s["id"])}
                 if spec.kind in RANDOM_KINDS:
                     raw["scheduled_exit_at"] = mon.exit_at
                 recs = expand_to_budgets(raw, decode, close_id, args.budget_list)

@@ -61,3 +61,13 @@ def test_expand_short_output_all_budgets():
 def test_expand_skips_budgets_above_run():
     recs = expand_to_budgets(raw_record(ANSWERED, 6, max_tokens=8), TOK.decode, CLOSE, [4, 8, 16])
     assert sorted(r["max_new_tokens"] for r in recs) == [4, 8]
+
+
+def test_grade_math_uses_last_boxed_latex():
+    from method_c_rpdi_ee.vllm_engine.budgets import grade
+
+    assert grade(r"</think> The answer is \boxed{\dfrac{14}{3}}.", r"\frac{14}{3}", "math") == (r"\dfrac{14}{3}", True)
+    # the numeric grader reads only the first number of a fraction, so it confuses 1/2 with 1/3
+    assert grade(r"</think> \boxed{\frac{1}{2}}", r"\frac{1}{3}", "numeric")[1] is True
+    assert grade(r"</think> \boxed{\frac{1}{2}}", r"\frac{1}{3}", "math")[1] is False
+    assert grade("</think> so 42 apples", "42", "numeric") == ("42", True)

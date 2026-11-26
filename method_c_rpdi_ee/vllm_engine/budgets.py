@@ -8,7 +8,17 @@ sinh, không phụ thuộc ngân sách; nên lượt chạy ở ngân sách B ch
 import hashlib
 from typing import Any, Callable, Dict, List, Sequence
 
+from common.math_grader import is_equiv, last_boxed
 from common.metrics import extract_answer_from_response, is_answer_correct
+
+
+def grade(text: str, ground_truth: str, grader: str = "numeric"):
+    """(đáp án trích được, đúng/sai). ``numeric``: GSM8K/SVAMP; ``math``: \boxed{} cuối cùng, so khớp LaTeX."""
+    if grader == "math":
+        pred = last_boxed(text)
+        return pred, is_equiv(pred, ground_truth)
+    pred = extract_answer_from_response(text)
+    return pred, bool(is_answer_correct(pred, ground_truth))
 
 
 def expand_to_budgets(
@@ -28,14 +38,14 @@ def expand_to_budgets(
         closed_within = close_index is not None and close_index < B
         think_tokens = close_index if closed_within else len(ids)
         exited = bool(raw.get("forced_close")) and closed_within
-        pred = extract_answer_from_response(decode(list(raw["prompt_ids"]) + ids))
+        pred, correct = grade(decode(list(raw["prompt_ids"]) + ids), raw["ground_truth"], raw.get("grader", "numeric"))
         records.append({
             "sample_id": raw["sample_id"],
             "method": raw["method"],
             "max_new_tokens": B,
             "ground_truth": raw["ground_truth"],
             "predicted_answer": pred,
-            "is_correct": bool(is_answer_correct(pred, raw["ground_truth"])),
+            "is_correct": bool(correct),
             "total_tokens": len(ids),
             "think_tokens": think_tokens,
             "answer_tokens": len(ids) - think_tokens,

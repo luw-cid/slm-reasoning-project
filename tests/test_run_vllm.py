@@ -101,3 +101,23 @@ def test_draw_exit_at_is_seeded_and_matched_skips_non_exits():
     assert draw_exit_at(ht, 1, ref, seed=0) is None               # cắt cứng không cần rút
     with pytest.raises(KeyError):
         draw_exit_at(matched, 99, ref, seed=0)
+
+
+def test_parse_args_dataset_picks_file_and_grader():
+    import os
+
+    args = parse_args(["--output_dir", "x", "--dataset", "math500"])
+    assert args.grader == "math" and os.path.basename(args.data_file) == "math500_test.json"
+    args = parse_args(["--output_dir", "x", "--dataset", "svamp", "--data_file", "custom.json"])
+    assert args.grader == "numeric" and args.data_file == "custom.json"
+    args = parse_args(["--output_dir", "x"])
+    assert args.grader == "numeric" and os.path.basename(args.data_file) == "gsm8k_test_full.json"
+    assert args.temperature == 0.0
+
+
+def test_request_seed_is_per_question_and_per_run():
+    from method_c_rpdi_ee.vllm_engine.run_vllm import request_seed
+
+    assert request_seed(0, 5) != request_seed(0, 6)
+    assert request_seed(1, 5) != request_seed(0, 5)
+    assert request_seed(2, 7) == request_seed(2, 7)
