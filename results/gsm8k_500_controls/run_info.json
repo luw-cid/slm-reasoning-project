@@ -1,0 +1,76 @@
+{
+  "args": {
+    "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "data_file": "/content/slm-reasoning-project/common/data/gsm8k_test_full.json",
+    "start": 100,
+    "end": 600,
+    "methods": "hardtrunc:100,hardtrunc:130,random,random_matched",
+    "max_tokens": 16384,
+    "budgets": "512,768,1024,1536,2048,3072,4096,8192,16384",
+    "chunk_size": null,
+    "dtype": "float16",
+    "gpu_memory_utilization": 0.9,
+    "max_num_seqs": 128,
+    "enforce_eager": false,
+    "random_ref": "/content/slm-reasoning-project/results/gsm8k_500/rpdi_exit_ref.json",
+    "random_ref_method": "rpdi_legacy_W16_l1.5",
+    "seed": 42,
+    "expand_only": false,
+    "output_dir": "/content/drive/MyDrive/slm_rlvr/vllm_runs/gsm8k_500_controls",
+    "budget_list": [
+      512,
+      768,
+      1024,
+      1536,
+      2048,
+      3072,
+      4096,
+      8192,
+      16384
+    ]
+  },
+  "methods": [
+    {
+      "key": "hardtrunc_N100",
+      "kind": "hardtrunc",
+      "W": 100,
+      "lam": null,
+      "boundary": ""
+    },
+    {
+      "key": "hardtrunc_N130",
+      "kind": "hardtrunc",
+      "W": 130,
+      "lam": null,
+      "boundary": ""
+    },
+    {
+      "key": "random",
+      "kind": "random",
+      "W": 0,
+      "lam": null,
+      "boundary": "punct"
+    },
+    {
+      "key": "random_matched",
+      "kind": "random_matched",
+      "W": 0,
+      "lam": null,
+      "boundary": "punct"
+    }
+  ],
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "torch": "2.4.0+cu121",
+  "transformers": "4.46.3",
+  "vllm": "0.6.3.post1",
+  "VLLM_USE_V1": "0",
+  "gpu": "Tesla T4",
+  "max_model_len": 16548,
+  "started_at": "2026-11-25 12:05:26",
+  "progress": {
+    "done": 2000,
+    "total": 2000,
+    "elapsed_seconds": 3724.1,
+    "generated_tokens": 1928829
+  }
+}
